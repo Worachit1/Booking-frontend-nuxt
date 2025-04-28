@@ -1,0 +1,16 @@
+/* assets/css/main.css */
+
+/* โหลดฟอนต์ */
+@font-face {
+    font-family: 'Kanit';
+    src: url('@/assets/css/Kanit/Kanit-Regular.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+  }
+  
+  /* ใช้ฟอนต์ */
+  body {
+    font-family: 'Kanit', sans-serif;
+    padding-top: 50px;
+  }
+  
