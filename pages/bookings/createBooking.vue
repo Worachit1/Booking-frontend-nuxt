@@ -16,11 +16,33 @@ const Booking = ref({
     user_id: null,
     status: "Pending",
 });
+const showMoadal = ref(false);
 
 onMounted(async () => {
     await roomStore.fetchRooms();
     await buildingStore.fetchBuildings();
 });
+
+const handleConfirm = async () => {
+    if (!Booking.value.title.trim()) {
+        alert("กรุณากรอกชื่อการจอง");
+        return;
+    }
+    if (!Booking.value.room_id) {
+        alert("กรุณาเลือกห้อง");
+        return;
+    }
+    if (!Booking.value.start_time || !Booking.value.end_time) {
+        alert("กรุณาเลือกวันและเวลา");
+        return;
+    }
+    if (new Date(Booking.value.start_time) >= new Date(Booking.value.end_time)) {
+        alert("เวลาสิ้นสุดต้องมากกว่าเวลาเริ่มต้น");
+        return;
+    }
+
+    showMoadal.value = true;
+};
 
 const handleCreateBooking = async () => {
     try {
@@ -34,19 +56,33 @@ const handleCreateBooking = async () => {
             status: Booking.value.status,
         };
 
-
         const createBooking = await bookingStore.addBooking(data);
-        window.location.href = "/"; // เปลี่ยนเส้นทางไปยังหน้ารายการการจองหลังจากสร้างการจองเสร็จ 
     } catch (error) {
         console.error("Error creating booking:", error);
         alert("เกิดข้อผิดพลาดในการสร้างการจอง");
     }
+
+    showMoadal.value = false;
+    Booking.value = {
+        title: "",
+        description: "",
+        start_time: "",
+        end_time: "",
+        room_id: null,
+        user_id: null,
+        status: "Pending",
+    };
+}
+
+const handleCancel = () => {
+    showMoadal.value = false; // ปิด modal
 };
+
 </script>
 
 <template>
     <h2>จองห้อง</h2>
-    <form @submit.prevent="handleCreateBooking">
+    <form @submit.prevent="handleConfirm">
         <div>
             <label for="title">ชื่อการจอง:</label>
             <input id="title" v-model="Booking.title" type="text" required />
@@ -76,9 +112,63 @@ const handleCreateBooking = async () => {
             </select>
         </div>
         <button type="submit">สร้างการจอง</button>
+
+        <div v-if="showMoadal" class="modal-overlay">
+            <div class="modal-content">
+                <h3>🧾รายละเอียกการจองประชุม</h3>
+                <p>📋หัวข้อการประชุม</p>
+                <p>{{ Booking.title }}</p>
+                <p>📝คำอธิบาย</p>
+                <p>{{ Booking.description }}</p>
+                <p>🕓วันที่เริ่ม - สิ้นสุด กิจกรรม</p>
+                <p>{{ Booking.start_time }} - {{ Booking.end_time }} น.</p>
+                <p>🙋‍♂️ผู้จองห้องประชุม</p>
+                <p>{{ Booking.user_id }}</p>
+                <p>🏠ห้องประชุม</p>
+                <p>{{roomStore.rooms.find(room => room.id === Booking.room_id)?.name}}</p>
+                <button @click="handleCreateBooking">ยืนยัน</button>
+                <button @click="handleCancel">ยกเลิก</button>
+            </div>
+        </div>
+
     </form>
 </template>
 
+<style scoped>
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 200%;
+    background: rgba(192, 189, 189, 0.378);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    
+}
+
+.modal {
+    background: #13131f;
+    padding: 10px;
+    border-radius: 8px;
+    width: 200px;
+    color: white;
+    text-align: center;
+    margin-top: -150px;
+    
+}
+
+.modal-content {
+    background: whitesmoke;
+    padding: 20px;
+    border-radius: 8px;
+    width: 300px;
+    color: #13131f;
+    text-align: center;
+    margin-top: -50px;
+}
+</style>
 
 
-<style scoped></style>
+  

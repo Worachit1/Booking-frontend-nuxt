@@ -295,7 +295,7 @@ onMounted(() => {
 }
 
 .popup-content {
-  background: #13131f;
+  background: whitesmoke;
   padding: 25px;
   border-radius: 10px;
   width: 90%;
@@ -309,13 +309,13 @@ onMounted(() => {
 .popup-header {
   font-size: 20px;
   font-weight: bold;
-  color: #ffffff;
+  color: #13131f;
   margin-bottom: 10px;
 }
 
 .popup-body {
   font-size: 16px;
-  color: #ffffff;
+  color: #13131f;
   margin-bottom: 20px;
 }
 
@@ -384,4 +384,5 @@ onMounted(() => {
   border: 1px solid #ccc;
   /* เส้นขอบ */
 }
+
 </style>

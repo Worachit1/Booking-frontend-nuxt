@@ -2,7 +2,7 @@
 import { ref, onMounted } from "vue";
 import { useRoomStore } from "@/store/roomStore";
 import { useBuildingStore } from "@/store/buildingStore";
-import { useBuilding_RoomStore } from "@/store/building_roomStrore"; // Ensure the file path matches the actual file
+import { useBuilding_RoomStore } from "@/store/building_roomStrore"; 
 // Removed unused import for useRoute
 
 const roomStore = useRoomStore();
@@ -82,7 +82,6 @@ const handleCreate = async () => {
 <template>
   <div>
     <h2>สร้างห้องใหม่</h2>
-
     <div>
       <input type="text" v-model="Room.name" placeholder="ชื่อห้อง" />
     </div>
@@ -105,7 +104,7 @@ const handleCreate = async () => {
 
     <div>
       <select v-model="Room.building_id">
-        <option disabled value="">เลือกอาคาร</option>
+        <option disabled value="">-- เลือกอาคาร --</option>
         <option v-for="building in buildings" :key="building.id" :value="building.id">
           {{ building.name }}
         </option>
