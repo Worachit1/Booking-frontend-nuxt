@@ -4,6 +4,7 @@ import { defineProps, defineEmits } from "vue";
 import { useBuildingStore } from "@/store/buildingStore";
 import { useBuilding_RoomStore } from "~/store/building_roomStrore";
 
+
 const buildingStore = useBuildingStore();
 const buildings = computed(() => buildingStore.buildings);
 

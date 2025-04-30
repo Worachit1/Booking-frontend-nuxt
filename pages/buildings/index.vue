@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, ref, watch } from "vue";
+import { onMounted, ref } from "vue";
 import { useBuildingStore } from "@/store/buildingStore";
 
 const buildingStore = useBuildingStore();
@@ -11,7 +11,6 @@ onMounted(async () => {
   await buildingStore.fetchBuildings();
   buildings.value = buildingStore.buildings;
 
-  // สร้างสำเนา editable สำหรับแต่ละแถว
   editableBuildings.value = buildings.value.map((b) => ({
     ...b,
     isEditing: false,
@@ -30,11 +29,6 @@ const saveEdit = async (id, index) => {
   editableBuildings.value[index].isEditing = false;
 };
 
-// const goToDetail = (id) => {
-//   // นำทางไปยังหน้ารายละเอียดอาคาร
-//   window.location.href = `/buildings/${id}`;
-// };
-
 const showModal = ref(false);
 const newBuildingName = ref("");
 
@@ -51,6 +45,31 @@ const createBuilding = async () => {
   showModal.value = false;
 };
 
+const showDeleteModal = ref(false);
+const buildingToDelete = ref(null);
+
+const confirmDelete = (building) => {
+  buildingToDelete.value = building;
+  showDeleteModal.value = true;
+};
+
+const deleteBuilding = async () => {
+  if (buildingToDelete.value) {
+    await buildingStore.deleteBuilding(buildingToDelete.value.id);
+    await buildingStore.fetchBuildings();
+
+    buildings.value = buildingStore.buildings;
+    editableBuildings.value = buildings.value.map((b) => ({ ...b, isEditing: false }));
+
+    buildingToDelete.value = null;
+    showDeleteModal.value = false;
+  }
+};
+
+const closeModals = () => {
+  showModal.value = false;
+  showDeleteModal.value = false;
+};
 </script>
 
 <template>
@@ -80,57 +99,66 @@ const createBuilding = async () => {
             </td>
             <td>
               <div class="action-buttons">
-                <!-- <button @click="goToDetail(b.id)">ดูรายละเอียด</button> -->
-              <div style="display: flex; align-items: center;">
-                <button class="edit" v-if="!b.isEditing" @click="startEdit(index)">
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5}
-                    stroke="currentColor" className="svg-icon" width="20px" height="20px">
-                    <path strokeLinecap="round" strokeLinejoin="round"
-                      d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
-                  </svg>
-                  แก้ไข
-                </button>
-                <button class="confirm" v-else @click="saveEdit(b.id, index)">
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-                    stroke="currentColor" class="svg-icon" width="20px" height="20px">
-                    <path stroke-linecap="round" stroke-linejoin="round"
-                      d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
-                  </svg>
-                  บันทึก
-                </button>
-                <button class="delete" @click="buildingStore.deleteBuilding(b.id)">
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-                    stroke="currentColor" class="svg-icon" width="20px" height="20px">
-                    <path stroke-linecap="round" stroke-linejoin="round"
-                      d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
-                  </svg>
-                  ลบ
-                </button>
-              </div>
+                <div style="display: flex; align-items: center;">
+                  <button class="edit" v-if="!b.isEditing" @click="startEdit(index)">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                      stroke="currentColor" class="svg-icon" width="20px" height="20px">
+                      <path stroke-linecap="round" stroke-linejoin="round"
+                        d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
+                    </svg>
+                    แก้ไข
+                  </button>
+                  <button class="confirm" v-else @click="saveEdit(b.id, index)">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                      stroke="currentColor" class="svg-icon" width="20px" height="20px">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0=" />
+                    </svg>
+                    บันทึก
+                  </button>
+
+                  <button class="delete" @click="confirmDelete(b)">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                      stroke="currentColor" class="svg-icon" width="20px" height="20px">
+                      <path stroke-linecap="round" stroke-linejoin="round"
+                        d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+                    </svg>
+                    ลบ
+                  </button>
+                </div>
               </div>
             </td>
           </tr>
         </tbody>
       </table>
     </div>
+
     <div v-else>
       <p>ยังไม่ได้เพิ่มอาคาร</p>
     </div>
 
-    <!-- โมดอลเพิ่มอาคาร -->
-    <div v-if="showModal" class="modal-overlay">
+    <!-- showModal เพิ่อที่จะเพิ่มอาคารหรือ จะลบอาคาร-->
+    <div v-if="showModal || showDeleteModal" class="modal-overlay">
       <div class="modal">
-        <h3>เพิ่มอาคารใหม่</h3>
-        <input v-model="newBuildingName" type="text" placeholder="ชื่ออาคาร" />
-        <div class="modal-actions">
-          <button @click="createBuilding" class="confirmBuilding">บันทึก</button>
-          <button @click="showModal = false" class="cancel">ยกเลิก</button>
-        </div>
+        <template v-if="showModal">
+          <h3>เพิ่มอาคารใหม่</h3>
+          <input v-model="newBuildingName" type="text" placeholder="ชื่ออาคาร" />
+          <div class="modal-actions">
+            <button @click="createBuilding" class="modal-confirm">บันทึก</button>
+            <button @click="closeModals" class="modal-cancel">ยกเลิก</button>
+          </div>
+        </template>
+
+        <template v-else-if="showDeleteModal">
+          <h3>คุณแน่ใจหรือไม่ที่จะลบ "{{ buildingToDelete?.name }}" ?</h3>
+          <div class="modal-actions">
+            <button @click="deleteBuilding" class="modal-confirm">ยืนยัน</button>
+            <button @click="closeModals" class="modal-cancel">ยกเลิก</button>
+          </div>
+        </template>
       </div>
     </div>
   </div>
 </template>
-
 
 <style scoped>
 .container {
@@ -245,7 +273,7 @@ h1 {
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.4);
+  background: rgba(151, 150, 150, 0.142);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -275,7 +303,7 @@ h1 {
   gap: 5px;
 }
 
-.confirmBuilding {
+.modal-confirm {
   background-color: #39e65e;
   padding: 8px 12px;
   border-radius: 5px;
@@ -284,12 +312,12 @@ h1 {
   cursor: pointer;
 }
 
-.confirmBuilding:hover {
+.modal-confirm:hover {
   background-color: #2b9f3c;
 }
 
-.cancel {
-  background-color: #ff5959;
+.modal-cancel {
+  background-color: #ff0000;
   padding: 8px 12px;
   border-radius: 5px;
   color: white;
@@ -297,8 +325,7 @@ h1 {
   cursor: pointer;
 }
 
-.cancel:hover {
-  background-color: #ff0000;
+.modal-cancel:hover {
+  background-color: #cf4c4c;
 }
-
 </style>

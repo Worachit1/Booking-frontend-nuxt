@@ -7,7 +7,7 @@ const config = useRuntimeConfig()
 
 export const useUserStore = defineStore("user", {
     state: () => ({  
-        users: [],
+        users: [] as any[], // Explicitly define the type of users
     }),
     actions: {
         async fetchUsers() {
@@ -25,20 +25,17 @@ export const useUserStore = defineStore("user", {
         },
         async fetchUserById(user_id: string) {
             try {
-                const response = await axios.get(`${config.public.apiBase}/api/v1/users/${user_id}`);
-                
-                // ตรวจสอบ status และการมีอยู่ของข้อมูล
-                if (response.status === 200 && response.data && response.data.data) {
-                    this.users = response.data.data;
-                    console.log("User fetchedById successfully:", this.users);
-                } else {
-                    console.error("Error fetching user:", response.statusText || 'No data found');
-                }
+              const response = await axios.get(`${config.public.apiBase}/api/v1/users/${user_id}`);
+              if (response.status === 200 && response.data.data) {
+                this.users = [response.data.data];  // อัปเดตเฉพาะผู้ใช้ที่ตรงกับ ID
+                console.log("User fetchedById successfully:", response.data.data);
+              } else {
+                console.error("Error fetching user:", response.statusText || 'No data found');
+              }
             } catch (error) {
-                // จัดการข้อผิดพลาดจากการร้องขอ API
-                console.error("Error fetching user:", error);
+              console.error("Error fetching user:", error);
             }
-        },
+          },
         async addUser(newUser: any) {
             try {
                 const formData = new FormData();
