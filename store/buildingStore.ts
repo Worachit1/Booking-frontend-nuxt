@@ -13,7 +13,7 @@ export const useBuildingStore = defineStore("building", {
         const response = await axios.get(`${config.public.apiBase}/api/v1/buildings/list`);
         if (response.status === 200) {
           this.buildings = response.data.data; 
-          console.log("Buildings fetched successfully:", this.buildings);
+          // console.log("Buildings fetched successfully:", this.buildings);
         } else {
           console.error("Error fetching buildings:", response.statusText);
         }

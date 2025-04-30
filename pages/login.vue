@@ -11,23 +11,28 @@ const authStore = useAuthStore();
 
 const login = async () => {
   try {
-    const user = await authStore.login({ email: email.value, password: password.value });
-    if (!user) throw new Error('ไม่พบข้อมูลผู้ใช้');
+    const user = await authStore.login({ email: email.value, password: password.value }); 
+    
+    if (!user || !user.id) {
+      throw new Error('ไม่พบข้อมูลผู้ใช้');
+    }
 
-    alert('เข้าสู่ระบบสำเร็จ!');
-    localStorage.setItem('user_id', user.id || '');
-    localStorage.setItem('user_email', user.email);
+    // เก็บข้อมูลลง localStorage
+    localStorage.setItem('user_id', user.ID);
+    localStorage.setItem('user_email', user.Email);
     localStorage.setItem('user_first_name', user.first_name);
     localStorage.setItem('user_last_name', user.last_name);
     localStorage.setItem('user_image_url', String(user.image_url));
     localStorage.setItem('user_position', user.position_name);
     localStorage.setItem('user_token', user.token || '');
 
-    router.push('/');
+    router.push('/users/' + user.id); // เปลี่ยนเส้นทางไปหน้าผู้ใช้
   } catch (error) {
+    console.error("Login error:", error);
     alert('เข้าสู่ระบบไม่สำเร็จ: ' + error.message);
   }
 };
+
 
 
 </script>

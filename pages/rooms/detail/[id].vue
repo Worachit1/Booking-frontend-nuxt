@@ -15,11 +15,13 @@ onMounted(async () => {
 
 <template>
     <div>
-        <h1>หน้ารายละเอียดห้อง</h1>
+        <h1>รายละเอียดห้อง</h1>
         <div v-if="room">
             <h2>ชื่อห้อง: {{ room.name }}</h2>
             <p>คำอธิบาย: {{ room.description }}</p>
             <p>ความจุของห้อง: {{ room.capacity }}</p>
+            <img :src="room.image_url || '/images/default-room.jpg'" alt="Room Image" style="max-width: 400px; border-radius: 8px;" />
+
         </div>
     </div>
 </template>

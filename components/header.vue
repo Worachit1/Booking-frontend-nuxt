@@ -1,18 +1,19 @@
-
 <script setup>
 import { onMounted, computed } from "vue";
 import { useUserStore } from "@/store/userStore";
 
 const userStore = useUserStore();
-const userId = localStorage.getItem("user_id"); // หรือจะดึงจาก auth store ก็ได้
+const userId = localStorage.getItem("user_id");
+console.log("userId:", userId); // ✅ ต้องไม่เป็น undefined
 
-onMounted(() => {
+
+onMounted(async () => {
   if (userId) {
-    userStore.fetchUserById(userId);
+    await userStore.getUserById(userId); // ดึงข้อมูลผู้ใช้โดยใช้ user_id
   }
 });
 
-const user = computed(() => userStore.users[0] || null);
+const user = computed(() => userStore.currentUser || null); // ใช้ currentUser จาก store
 const userProfileImage = computed(() =>
   user.value?.image_url || "/images/default-profile.jpg"
 );
@@ -28,8 +29,6 @@ const userLastName = computed(() => user.value?.last_name || "User");
     </div>
   </div>
 </template>
-
-
 
 <style scoped>
 .header {

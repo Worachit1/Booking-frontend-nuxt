@@ -104,6 +104,12 @@ onMounted(() => {
         <div class="header">ปฏิทินการจอง</div>
         <div class="header">ตารางการจองทั้งหมด</div>
         <div class="calendar-container">
+          <!-- 🔍 ค้นหาวันที่ -->
+<div class="calendar-search">
+  <input type="date" v-model="searchDate" class="date-input" />
+  <button @click="goToDate" class="search-button">ค้นหา</button>
+</div>
+
           <FullCalendar :options="calendarOptions" />
 
           <!-- ปุ่มจองห้อง -->
@@ -269,6 +275,13 @@ onMounted(() => {
   border-radius: 8px;
   overflow: hidden;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  padding-bottom: 10px;
+}
+
+.calendar-footer {
+  margin-top: 16px;
+  display: flex;
+  justify-content: flex-end;
 }
 
 .input {
@@ -375,12 +388,6 @@ onMounted(() => {
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 }
 
-.calendar-footer {
-  margin-top: 16px;
-  display: flex;
-  justify-content: flex-end;
-}
-
 .booking-button {
   background-color: #4caf50;
   color: white;
@@ -389,6 +396,8 @@ onMounted(() => {
   border-radius: 6px;
   font-weight: bold;
   transition: background-color 0.3s ease;
+  margin-top: 5px;
+  margin-right: 10px;
 }
 
 .booking-button:hover {

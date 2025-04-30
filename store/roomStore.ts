@@ -29,19 +29,21 @@ export const useRoomStore = defineStore("room", {
             }
         },
 
-        async getById(id: string) {
+        async getById(room_id: string) {
             try {
-                const response = await axios.get(`${config.public.apiBase}/api/v1/rooms/${id}`);
+                const response = await axios.get(`${config.public.apiBase}/api/v1/rooms/${room_id}`);
                 if (response.status === 200) {
-                    return response.data.data;
+                    // console.log("Room fetched successfully:", response.data.data);
+                    return response.data.data; // ส่งกลับข้อมูลห้อง
                 } else {
                     console.error("Error fetching room:", response.statusText);
+                    return null; // หากไม่พบข้อมูลห้อง
                 }
             } catch (error) {
                 console.error("Error fetching room:", error);
+                return null; // หากเกิดข้อผิดพลาด
             }
         },
-
         async addRoom(newRoom: Room) {
             try {
                 const formData = new FormData();
