@@ -75,21 +75,21 @@ const filteredRooms = (buildingId) => {
       <!-- รายการอาคาร -->
       <ul v-if="isRoomDropdownOpen" class="dropdown-list">
         <li v-for="b in buildings" :key="b.id" class="dropdown-item">
-          <div @click="openBuildingId = openBuildingId === b.id ? null : b.id">
+          <!-- เพิ่ม class building-name ที่จุดนี้ -->
+          <div class="building-name" @click="openBuildingId = openBuildingId === b.id ? null : b.id">
             🏢 {{ b.name }}
             <i :class="openBuildingId === b.id ? 'fas fa-chevron-up' : 'fas fa-chevron-down'" />
           </div>
 
-          <!-- แสดงห้องเฉพาะเมื่อคลิกอาคาร -->
           <ul v-if="openBuildingId === b.id" class="dropdown-sub">
-            <li v-for="room in filteredRooms(b.id)" :key="room.building_room_id" class="dropdown-sub-item"
-              style="font-size: 16px;">
+            <li v-for="room in filteredRooms(b.id)" :key="room.building_room_id" class="dropdown-sub-item">
               <router-link :to="`/bookings/room/${room.room_id}`" class="room-link">
                 🏠 {{ room.room_name }}
               </router-link>
             </li>
           </ul>
         </li>
+
       </ul>
 
       <!-- <a href="/" class="home-link">
@@ -165,9 +165,23 @@ const filteredRooms = (buildingId) => {
 
 }
 
-.dropdown-item:hover {
-  text-decoration: underline;
+.dropdown-sub-item:hover,
+.room-link:hover,
+.home-link:hover,
+.building-name:hover{
+  text-decoration: none; 
+  color: #ffb347; 
+  transition: background-color 0.3s ease, color 0.3s ease; 
 }
+.dropdown-sub-item:active,
+.room-link:active,
+.home-link:active,
+.building-name:active {
+  color: #ffffff; 
+  background-color: #4a4a72; 
+  transition: background-color 0.2s ease, color 0.2s ease; 
+}
+
 
 .dropdown-sub {
   list-style: none;
@@ -186,7 +200,7 @@ const filteredRooms = (buildingId) => {
 
 .room-link {
   text-decoration: none;
-  color: inherit; 
+  color: inherit;
 }
 
 .sidebar {

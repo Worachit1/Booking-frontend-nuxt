@@ -42,6 +42,7 @@ export const useBookingStore = defineStore("booking", {
                 const response = await axios.post(`${config.public.apiBase}/api/v1/bookings/create`, newBooking);
                 if (response.status === 200) {
                     console.log("Booking added successfully:", response.data.data);
+                    return response.data;
                 } else {
                     console.error("Error adding booking:", response.statusText);
                 }
