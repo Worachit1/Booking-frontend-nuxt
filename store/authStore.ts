@@ -24,33 +24,34 @@ export const useAuthStore = defineStore("auth", {
         async login(payload: { email: string; password: string }) {
             try {
                 console.log("Login Payload:", payload);
+
                 const response = await axios.post(
-                    // `${config.public.apiBase}/api/v1/login`,
-                    "http://localhost:8080/api/v1/login",
-                    payload
+                    `${config.public.apiBase}/api/v1/login`,
+                    payload,
+                    { withCredentials: true }  // ส่งคุกกี้ที่สามารถใช้ได้
                 );
                 console.log("Response:", response);
-        
-                if (response.status === 200 && response.data.data) {
-                    this.user = response.data.data;
-                    this.token = this.user?.token ?? null;
-        
-                    // Check if token and user data are valid
+
+                if (response.status === 200 && response.data.user) {
+                    this.user = response.data.user;
+                    this.token = response.data.token || null;
+
+                    // ตรวจสอบข้อมูล token และ user
                     if (!this.token || !this.user) {
                         throw new Error('ข้อมูลผู้ใช้ไม่สมบูรณ์');
                     }
-        
+
+                    // จัดเก็บ token ใน localStorage ถ้าต้องการให้ใช้ใน session ถัดไป
+                    localStorage.setItem("token", this.token);
                     return this.user;
                 } else {
                     throw new Error('ไม่สามารถเข้าสู่ระบบได้');
                 }
             } catch (error: any) {
                 console.error("Login error:", error);
-                throw error;
+                throw new Error(error.response?.data?.message || "เข้าสู่ระบบไม่สำเร็จ");
             }
         },
-        
-
         async logout() {
             try {
                 await axios.post(

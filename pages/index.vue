@@ -105,9 +105,13 @@ onMounted(() => {
         <div class="header">ตารางการจองทั้งหมด</div>
         <div class="calendar-container">
           <FullCalendar :options="calendarOptions" />
-          <a href="/bookings/createBooking">จองห้อง</a>
 
+          <!-- ปุ่มจองห้อง -->
+          <div class="calendar-footer">
+            <a class="booking-button" href="/bookings/createBooking">+ จองห้อง</a>
+          </div>
         </div>
+
       </div>
 
       <!-- 🧾 ขวา: ตารางวันนี้ + รวม -->
@@ -371,6 +375,26 @@ onMounted(() => {
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 }
 
+.calendar-footer {
+  margin-top: 16px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.booking-button {
+  background-color: #4caf50;
+  color: white;
+  padding: 10px 20px;
+  text-decoration: none;
+  border-radius: 6px;
+  font-weight: bold;
+  transition: background-color 0.3s ease;
+}
+
+.booking-button:hover {
+  background-color: #388e3c;
+}
+
 
 .fc {
   background-color: #fdfdfd;
@@ -384,5 +408,4 @@ onMounted(() => {
   border: 1px solid #ccc;
   /* เส้นขอบ */
 }
-
 </style>

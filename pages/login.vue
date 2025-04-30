@@ -14,7 +14,7 @@ const login = async () => {
     const user = await authStore.login({ email: email.value, password: password.value });
     if (!user) throw new Error('ไม่พบข้อมูลผู้ใช้');
 
-    alert('เข้าสู่ระบบสำเร็จ: ' + user.email);
+    alert('เข้าสู่ระบบสำเร็จ!');
     localStorage.setItem('user_id', user.id || '');
     localStorage.setItem('user_email', user.email);
     localStorage.setItem('user_first_name', user.first_name);
@@ -25,7 +25,7 @@ const login = async () => {
 
     router.push('/');
   } catch (error) {
-    alert('เข้าสู่ระบบไม่สำเร็จนะ: ' + error.message);
+    alert('เข้าสู่ระบบไม่สำเร็จ: ' + error.message);
   }
 };
 
