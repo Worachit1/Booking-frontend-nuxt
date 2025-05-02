@@ -83,7 +83,7 @@ const filteredRooms = (buildingId) => {
 
           <ul v-if="openBuildingId === b.id" class="dropdown-sub">
             <li v-for="room in filteredRooms(b.id)" :key="room.building_room_id" class="dropdown-sub-item">
-              <router-link :to="`/bookings/room/${room.room_id}`" class="room-link">
+              <router-link :to="`user/bookings/room/${room.room_id}`" class="room-link">
                 🏠 {{ room.room_name }}
               </router-link>
             </li>
@@ -100,6 +100,9 @@ const filteredRooms = (buildingId) => {
       </a>
       <a href="/rooms" class="home-link">
         <i class="fas fa-calendar-check mr-2"></i> เพิ่มห้อง
+      </a>
+      <a href="/admin/bookings" class="home-link">
+        <i class="fas fa-calendar-check mr-2"></i> รายการจองห้อง
       </a>
     </div>
   </div>

@@ -8,7 +8,7 @@ const bookingStore = useBookingStore();
 const bookings = ref([]);
 
 const formatDate = (date) => {
-  return dayjs(date).locale("th").format("D MMMM YYYY เวลา HH:mm น.");
+  return dayjs(date).locale("th").format("D MMMM YYYY เวลา HH:mm:ss น.");
 };
 
 onMounted(async () => {

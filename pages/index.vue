@@ -114,7 +114,7 @@ onMounted(() => {
 
           <!-- ปุ่มจองห้อง -->
           <div class="calendar-footer">
-            <a class="booking-button" href="/bookings/createBooking">+ จองห้อง</a>
+            <a class="booking-button" href="/user/bookings/createBooking">+ จองห้อง</a>
           </div>
         </div>
 

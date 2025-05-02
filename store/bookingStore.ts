@@ -28,7 +28,7 @@ export const useBookingStore = defineStore("booking", {
                 // ตรวจสอบ status และการมีอยู่ของข้อมูล
                 if (response.status === 200 && response.data && response.data.data) {
                     this.bookings = response.data.data;
-                    console.log("Bookings fetchedByRoomId successfully:", this.bookings);
+                    // console.log("Bookings fetchedByRoomId successfully:", this.bookings);
                 } else {
                     console.error("Error fetching bookings:", response.statusText || 'No data found');
                 }
@@ -41,13 +41,52 @@ export const useBookingStore = defineStore("booking", {
             try {
                 const response = await axios.post(`${config.public.apiBase}/api/v1/bookings/create`, newBooking);
                 if (response.status === 200) {
-                    console.log("Booking added successfully:", response.data.data);
+                    // console.log("Booking added successfully:", response.data.data);
                     return response.data;
                 } else {
                     console.error("Error adding booking:", response.statusText);
                 }
             } catch (error) {
                 console.error("Error adding booking:", error);
+            }
+        },
+        // async updateBooking(id: string, updatedBooking: { room_id: string; title: string; description: string; start_time: string; end_time: string; status: string; }) {
+        //     try {
+        //         const response = await axios.patch(`${config.public.apiBase}/api/v1/bookings/${id}`, updatedBooking);
+        //         if (response.status === 200) {
+        //             // console.log("Booking updated successfully:", response.data.data);
+        //             return response.data;
+        //         } else {
+        //             console.error("Error updating booking:", response.statusText);
+        //         }
+        //     } catch (error) {
+        //         console.error("Error updating booking:", error);
+        //     }
+        // },
+        async updateStatusBooking(id: string, updatedBooking: {status: string; }) {
+            try {        
+                const response = await axios.patch(`${config.public.apiBase}/api/v1/bookings/${id}`, updatedBooking);
+        
+                if (response.status === 200) {
+                    console.log("Booking Status updated successfully:", response.data.data);
+                } else {
+                    console.error("Error updating booking:", response.statusText);
+                }
+            } catch (error) {
+                console.error("Error updating status:", error);
+            }
+        },        
+        async deleteBooking(id: string) {
+            try {
+                const response = await axios.delete(`${config.public.apiBase}/api/v1/bookings/${id}`);
+                if (response.status === 200) {
+                    // console.log("Booking deleted successfully:", response.data.data);
+                    return response.data;
+                } else {
+                    console.error("Error deleting booking:", response.statusText);
+                }
+            } catch (error) {
+                console.error("Error deleting booking:", error);
             }
         },
     },
