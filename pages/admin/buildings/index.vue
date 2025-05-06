@@ -88,7 +88,6 @@ const deleteBuilding = async () => {
   }
 };
 
-
 const closeModals = () => {
   showModal.value = false;
   showDeleteModal.value = false;

@@ -59,6 +59,16 @@ onMounted(async () => {
   <div class="container">
     <div class="row">
       <div class="col-md-12">
+        <div class="header-actions">
+          <button class="btn-create" @click="router.push('/admin/rooms/createRoom')">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+              stroke="currentColor" class="svg-icon" width="20px" height="20px">
+              <path stroke-linecap="round" stroke-linejoin="round"
+                d="M12 9v6m3-3H9m12 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+            </svg>
+            เพิ่มห้อง
+          </button>
+        </div>
         <table class="table table-bordered table-striped" v-if="rooms.length">
           <thead>
             <tr>
@@ -87,29 +97,33 @@ onMounted(async () => {
       </div>
     </div>
   </div>
-
-  
 </template>
 
 <style scoped>
 .container {
   margin: 20px;
 }
+
 .table {
   width: 100%;
   border-collapse: collapse;
 }
-th, td {
+
+th,
+td {
   padding: 10px;
   text-align: left;
   border-bottom: 1px solid #ddd;
 }
+
 th {
   background-color: #f2f2f2;
 }
+
 tr:hover {
   background-color: #f1f1f1;
 }
+
 img {
   border-radius: 6px;
   object-fit: cover;
@@ -124,9 +138,36 @@ button {
   color: white;
 }
 
+.btn-create {
+  background-color: #39e65e;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  cursor: pointer;
+  border-radius: 5px;
+  display: flex;
+  align-items: center;
+  font-size: 16px;
+  font-weight: bold;
+  gap: 5px;
+  transition: background-color 0.3s;
+  border: 1px solid #13131f;;
+}
+
+.header-actions {
+  display: flex;
+  justify-content: flex-end; 
+  margin-bottom: 20px;
+}
+
+.btn-create:hover {
+  background-color: #4cae4c;
+}
+
 .btn-edit {
   background-color: #5bc0de;
 }
+
 .btn-edit:hover {
   background-color: #31b0d5;
 }
@@ -134,6 +175,7 @@ button {
 .btn-cancel {
   background-color: #f06666;
 }
+
 .btn-cancel:hover {
   background-color: #d9534f;
 }
@@ -141,6 +183,7 @@ button {
 .btn-close {
   background-color: #f3c735;
 }
+
 .btn-close:hover {
   background-color: #d8ba6f;
 }
@@ -168,4 +211,6 @@ button {
 .modal-actions button {
   margin: 10px;
 }
+
+
 </style>
