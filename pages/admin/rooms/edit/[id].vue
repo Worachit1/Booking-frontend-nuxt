@@ -2,6 +2,10 @@
 import { ref, onMounted } from "vue";
 import { useRoute } from "vue-router";
 import { useRoomStore } from "~/store/roomStore";
+definePageMeta({
+  middleware: ["load-user"] // Corrected middleware name
+});
+
 
 
 const route = useRoute(); // ใช้ useRoute แทน window.location.pathname

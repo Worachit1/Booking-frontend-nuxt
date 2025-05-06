@@ -5,6 +5,9 @@ import { useRoomStore } from "@/store/roomStore";
 import { useBuildingStore } from "@/store/buildingStore";
 import dayjs from "dayjs";
 import "dayjs/locale/th";
+definePageMeta({
+  middleware: ["load-user"] // Corrected middleware name
+});
 
 const bookingStore = useBookingStore();
 const roomStore = useRoomStore();

@@ -1,27 +1,32 @@
 <script setup>
-import { onMounted, ref } from "vue";
+import { onMounted, ref, computed } from "vue";
 import { defineProps, defineEmits } from "vue";
 import { useBuildingStore } from "@/store/buildingStore";
-import { useBuilding_RoomStore } from "~/store/building_roomStrore";
+import { useBuilding_RoomStore } from "~/store/building_roomStore";
+import { useUserRoleStore } from "~/store/userRoleStore";
+import { useUserStore } from "@/store/userStore";
+import { useRoute } from "vue-router";
 
+const route = useRoute();
+// const userId = route.params.id || localStorage.getItem("user_id");
 
-const buildingStore = useBuildingStore();
-const buildings = computed(() => buildingStore.buildings);
-
-const building_roomStore = useBuilding_RoomStore();
-const building_rooms = computed(() => building_roomStore.building_rooms);
-
-onMounted(async () => {
-  await buildingStore.fetchBuildings();
-  await building_roomStore.fetchBuilding_Rooms();
-});
-
-
+// const userStore = useUserStore();
 const props = defineProps({
   isSidebarOpen: Boolean,
 });
 
 const emit = defineEmits(["toggleSidebar"]);
+
+const buildingStore = useBuildingStore();
+const building_roomStore = useBuilding_RoomStore();
+const userRoleStore = useUserRoleStore();
+
+const buildings = computed(() => buildingStore.buildings);
+const building_rooms = computed(() => building_roomStore.building_rooms);
+const currentUserRole = computed(() => userRoleStore.currentUserRole);
+
+const isRoomDropdownOpen = ref(false);
+const openBuildingId = ref(null);
 
 const toggleSidebar = () => {
   emit("toggleSidebar");
@@ -30,18 +35,35 @@ const toggleSidebar = () => {
   }
 };
 
-const isRoomDropdownOpen = ref(false);
-const openBuildingId = ref(null);
-
-// ฟังก์ชันกรองห้องเฉพาะของอาคารที่เปิดอยู่
 const filteredRooms = (buildingId) => {
   return building_rooms.value.filter((br) => br.building_id === buildingId);
 };
+
+const isAdmin = computed(() => currentUserRole.value?.[0]?.role_name === "Admin");
+
+
+const isRoleLoaded = ref(false);
+
+
+
+onMounted(async () => {
+  await buildingStore.fetchBuildings();
+  await building_roomStore.fetchBuilding_Rooms();
+
+  const userId = localStorage.getItem("user_id");
+  if (userId) {
+    await userRoleStore.getUserRoleById(userId);
+    isRoleLoaded.value = true;
+
+    console.log("currentUserRole:", currentUserRole.value);
+    console.log("role_name:", currentUserRole.value?.[0]?.role_name);
+    console.log("isAdmin:", isAdmin.value);
+  }
+});
+
 </script>
 
 <template>
-
-
   <div :class="['sidebar', { open: props.isSidebarOpen }]">
     <button @click="toggleSidebar" class="toggle-btn">
       <img v-if="!props.isSidebarOpen" src="/public/images/logo_sidebar(2).png" alt="menu"
@@ -75,35 +97,44 @@ const filteredRooms = (buildingId) => {
       <!-- รายการอาคาร -->
       <ul v-if="isRoomDropdownOpen" class="dropdown-list">
         <li v-for="b in buildings" :key="b.id" class="dropdown-item">
-          <!-- เพิ่ม class building-name ที่จุดนี้ -->
           <div class="building-name" @click="openBuildingId = openBuildingId === b.id ? null : b.id">
             🏢 {{ b.name }}
-            <i :class="openBuildingId === b.id ? 'fas fa-chevron-up' : 'fas fa-chevron-down'" />
+            <i :class="openBuildingId === b.id
+              ? 'fas fa-chevron-up'
+              : 'fas fa-chevron-down'
+              " />
           </div>
 
           <ul v-if="openBuildingId === b.id" class="dropdown-sub">
             <li v-for="room in filteredRooms(b.id)" :key="room.building_room_id" class="dropdown-sub-item">
-              <router-link :to="`user/bookings/room/${room.room_id}`" class="room-link">
+              <router-link :to="`/user/bookings/bookingroom/${room.room_id}`" class="room-link">
                 🏠 {{ room.room_name }}
               </router-link>
             </li>
           </ul>
         </li>
-
       </ul>
 
-      <!-- <a href="/" class="home-link">
+      <a href="/user/bookings/createBooking" class="home-link">
         <i class="fas fa-calendar-check mr-2"></i> จองห้องประชุม
-      </a> -->
-      <a href="/buildings" class="home-link">
-        <i class="fas fa-calendar-check mr-2"></i> เพิ่มอาคาร
       </a>
-      <a href="/rooms" class="home-link">
-        <i class="fas fa-calendar-check mr-2"></i> เพิ่มห้อง
-      </a>
-      <a href="/admin/bookings" class="home-link">
-        <i class="fas fa-calendar-check mr-2"></i> รายการจองห้อง
-      </a>
+
+
+      <!-- ✅ เฉพาะ Admin  เท่านั้น -->
+      <div v-if="isRoleLoaded && isAdmin">
+        <a href="/admin/buildings" class="home-link">
+          <i class="fas fa-calendar-check mr-2"></i> เพิ่มอาคาร
+        </a>
+        <a href="/admin/rooms" class="home-link">
+          <i class="fas fa-calendar-check mr-2"></i> เพิ่มห้อง
+        </a>
+        <a href="/admin/bookings" class="home-link">
+          <i class="fas fa-calendar-check mr-2"></i> รายการจองห้อง
+        </a>
+      </div>
+
+
+
     </div>
   </div>
 </template>
@@ -155,7 +186,6 @@ const filteredRooms = (buildingId) => {
   padding-left: 20px;
   margin-top: 5px;
   text-decoration: none;
-
 }
 
 .dropdown-item {
@@ -165,26 +195,27 @@ const filteredRooms = (buildingId) => {
   cursor: pointer;
   transition: 0.2s;
   text-decoration: none;
-
 }
 
 .dropdown-sub-item:hover,
 .room-link:hover,
 .home-link:hover,
-.building-name:hover{
-  text-decoration: none; 
-  color: #ffb347; 
-  transition: background-color 0.3s ease, color 0.3s ease; 
+.building-name:hover {
+  text-decoration: none;
+  /* color: #ffb347; */
+  background: #e4e1e151;
+  border-radius: 5px;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
+
 .dropdown-sub-item:active,
 .room-link:active,
 .home-link:active,
 .building-name:active {
-  color: #ffffff; 
-  background-color: #4a4a72; 
-  transition: background-color 0.2s ease, color 0.2s ease; 
+  color: #ffffff;
+  background-color: #4a4a72;
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
-
 
 .dropdown-sub {
   list-style: none;

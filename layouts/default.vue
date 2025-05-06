@@ -2,6 +2,9 @@
 import { ref } from 'vue'
 import Sidebar from '@/components/sidebar.vue'
 import Header from '@/components/header.vue'
+definePageMeta({
+  middleware: ["load-user"] // Corrected middleware name
+});
 
 const isSidebarOpen = ref(false)
 const toggleSidebar = () => {

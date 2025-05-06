@@ -1,6 +1,9 @@
 <script setup>
 import { ref } from "vue";
 import { useBuildingStore } from "@/store/buildingStore";
+definePageMeta({
+  middleware: ["load-user"] // Corrected middleware name
+});
 
 const buildingStore = useBuildingStore();
 const buildingName = ref("");

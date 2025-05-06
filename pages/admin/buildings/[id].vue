@@ -2,6 +2,10 @@
 import { ref, onMounted } from "vue";
 import { useRoute } from "vue-router";
 import { useBuildingStore } from "@/store/buildingStore";
+definePageMeta({
+  middleware: ["load-user"] // Corrected middleware name
+});
+
 
 const route = useRoute();
 const buildingId = route.params.id; // รับ ID จาก URL

@@ -3,6 +3,10 @@ import { ref, onMounted } from "vue";
 import { useAuthStore } from "@/store/authStore";
 import { useUserPositionStore } from "@/store/userPositionStore";
 
+definePageMeta({
+    middleware: []
+});
+
 const authStore = useAuthStore();
 const userPositionStore = useUserPositionStore();
 const User = ref({
@@ -93,52 +97,135 @@ const handleRegister = async () => {
 </script>
 
 <template>
-    <div>
-        <h1>สมัครสมาชิก</h1>
-        <div>
-            <label for="first_name">ชื่อ:</label>
-            <input type="text" v-model="User.first_name" required />
+    <div class="register-container">
+      <h1 class="title">สมัครสมาชิก</h1>
+  
+      <div class="form-group">
+        <label>ชื่อ:</label>
+        <input type="text" v-model="User.first_name" />
+      </div>
+  
+      <div class="form-group">
+        <label>นามสกุล:</label>
+        <input type="text" v-model="User.last_name" />
+      </div>
+  
+      <div class="form-group">
+        <label>อีเมล:</label>
+        <input type="email" v-model="User.email" />
+      </div>
+  
+      <div class="form-group">
+        <label>รหัสผ่าน:</label>
+        <input type="password" v-model="User.password" />
+      </div>
+  
+      <div class="form-group">
+        <label>เบอร์โทรศัพท์:</label>
+        <input type="text" v-model="User.phone" />
+      </div>
+  
+      <div class="form-group">
+        <label>ตำแหน่ง:</label>
+        <select v-model="User.position_name">
+          <option disabled value="">-- เลือกตำแหน่ง --</option>
+          <option v-for="position in positions" :key="position.id" :value="position.name">
+            {{ position.name }}
+          </option>
+        </select>
+      </div>
+  
+      <div class="form-group">
+        <label>อัปโหลดรูปภาพ:</label>
+        <input type="file" @change="handleImageUpload" accept="image/*" />
+        <div v-if="User.image_url" class="image-preview">
+          <img :src="User.image_url" alt="preview" />
         </div>
-        <div>
-            <label for="last_name">นามสกุล:</label>
-            <input type="text" v-model="User.last_name" required />
-        </div>
-        <div>
-            <label for="email">อีเมล:</label>
-            <input type="email" v-model="User.email" required />
-        </div>
-        <div>
-            <label for="password">รหัสผ่าน:</label>
-            <input type="password" v-model="User.password" required />
-        </div>
-        <div>
-            <label for="phone">เบอร์โทรศัพท์:</label>
-            <input type="text" v-model="User.phone" required />
-        </div>
-        <div>
-            <label for="position_id">ตำแหน่ง:</label>
-            <select v-model="User.position_name" required>
-                <option disabled value="">-- เลือกตำแหน่ง --</option>
-                <option v-for="position in positions" :key="position.id" :value="position.name">
-                    {{ position.name }}
-                </option>
-            </select>
-
-        </div>
-
-        <div>
-            <label for="image">อัปโหลดรูปภาพ:</label>
-            <input type="file" @change="handleImageUpload" accept="image/*" />
-            <div v-if="User.image_url">
-                <p>ตัวอย่างรูป:</p>
-                <img :src="User.image_url" alt="User Image" width="150" />
-            </div>
-        </div>
-        <button @click="handleRegister">สมัครสมาชิก</button>
-        <div v-if="authStore.error" class="error-message">{{ authStore.error }}</div>
+      </div>
+  
+      <button @click="handleRegister">สมัครสมาชิก</button>
+      <div v-if="authStore.error" class="error-message">{{ authStore.error }}</div>
     </div>
-</template>
+  </template>
+  
 
 
 
-<style scoped></style>
+<style scoped>
+.register-container {
+  max-width: 500px;
+  margin: 2rem auto;
+  padding: 2rem;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+}
+
+.title {
+  text-align: center;
+  color: #04bd35;
+  margin-bottom: 1.5rem;
+}
+
+.form-group {
+  margin-bottom: 1.25rem;
+  display: flex;
+  flex-direction: column;
+}
+
+label {
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+}
+
+input,
+select {
+  padding: 0.6rem;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 1rem;
+  transition: border-color 0.2s;
+}
+
+input:focus,
+select:focus {
+  outline: none;
+  border-color: #04bd35;
+  box-shadow: 0 0 0 3px rgba(4, 189, 53, 0.15);
+}
+
+button {
+  width: 100%;
+  padding: 0.75rem;
+  background-color: #04bd35;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: bold;
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  margin-top: 1rem;
+}
+
+button:hover {
+  background-color: #5ef684;
+}
+
+.error-message {
+  color: red;
+  margin-top: 1rem;
+  text-align: center;
+}
+
+.image-preview {
+  margin-top: 10px;
+}
+
+.image-preview img {
+  max-width: 150px;
+  border-radius: 8px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+</style>

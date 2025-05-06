@@ -2,7 +2,11 @@
 import { ref, onMounted } from "vue";
 import { useRoomStore } from "@/store/roomStore";
 import { useBuildingStore } from "@/store/buildingStore";
-import { useBuilding_RoomStore } from "@/store/building_roomStrore";
+import { useBuilding_RoomStore } from "~/store/building_roomStore";
+definePageMeta({
+  middleware: ["load-user"] // Corrected middleware name
+});
+
 // Removed unused import for useRoute
 
 const roomStore = useRoomStore();
@@ -13,8 +17,8 @@ const Room = ref({
   name: "",
   description: "",
   capacity: 1,
-  image_url: "",     // ใช้สำหรับ preview รูป
-  imageFile: null,   // ไฟล์จริง ใช้ส่งไป backend
+  image_url: "", // ใช้สำหรับ preview รูป
+  imageFile: null, // ไฟล์จริง ใช้ส่งไป backend
   building_id: null,
 });
 
@@ -76,56 +80,85 @@ const handleCreate = async () => {
     building_id: null,
   };
 };
-
 </script>
 
 <template>
-<div class="row-1">
-  <div style="margin-top: 10px;">
-    <img :src="Room.image_url || '/images/default-picture.png'" alt="Room Image" width="350"
-      class="image-preview" />
-    <div class="input-image">
-      <input id="fileInput" type="file" @change="handleImageUpload" accept="image/*" class="file-hidden" />
-      <label for="fileInput" class="upload-button">
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-          stroke="currentColor" class="svg-icon" width="20" height="20">
-          <path stroke-linecap="round" stroke-linejoin="round"
-            d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
-        </svg>
-        เพิ่มรูป
-      </label>
+  <div class="row-1">
+    <div style="margin-top: 10px">
+      <img
+        :src="Room.image_url || '/images/default-picture.png'"
+        alt="Room Image"
+        width="350"
+        class="image-preview"
+      />
+      <div class="input-image">
+        <input
+          id="fileInput"
+          type="file"
+          @change="handleImageUpload"
+          accept="image/*"
+          class="file-hidden"
+        />
+        <label for="fileInput" class="upload-button">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke-width="1.5"
+            stroke="currentColor"
+            class="svg-icon"
+            width="20"
+            height="20"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3"
+            />
+          </svg>
+          เพิ่มรูป
+        </label>
+      </div>
+    </div>
+
+    <div class="form-right">
+      <div class="room-and-building">
+        <div>
+          <p><strong>ชื่อห้อง:</strong></p>
+          <input type="text" v-model="Room.name" placeholder="ชื่อห้อง" />
+        </div>
+        <div>
+          <p><strong>อาคาร:</strong></p>
+          <select v-model="Room.building_id">
+            <option disabled value="">-- เลือกอาคาร --</option>
+            <option
+              v-for="building in buildings"
+              :key="building.id"
+              :value="building.id"
+            >
+              {{ building.name }}
+            </option>
+          </select>
+        </div>
+      </div>
+
+      <div style="margin-top: 15px">
+        <p><strong>จำนวนคนที่เข้าประชุมได้:</strong></p>
+        <input type="number" v-model="Room.capacity" min="1" />
+      </div>
+
+      <div style="margin-top: 15px">
+        <p><strong>รายละเอียดห้องประชุม:</strong></p>
+        <input
+          type="text"
+          v-model="Room.description"
+          placeholder="คำอธิบาย"
+          class="input-description"
+        />
+      </div>
+      <button @click="handleCreate" class="create-room">สร้างห้อง</button>
     </div>
   </div>
-
-  <div class="form-right">
-    <div class="room-and-building">
-      <div>
-        <p><strong>ชื่อห้อง:</strong></p>
-        <input type="text" v-model="Room.name" placeholder="ชื่อห้อง" />
-      </div>
-      <div>
-        <p><strong>อาคาร:</strong></p>
-        <select v-model="Room.building_id">
-          <option disabled value="">-- เลือกอาคาร --</option>
-          <option v-for="building in buildings" :key="building.id" :value="building.id">
-            {{ building.name }}
-          </option>
-        </select>
-      </div>
-    </div>
-
-    <div style="margin-top: 15px;">
-      <p><strong>จำนวนคนที่เข้าประชุมได้:</strong></p>
-      <input type="number" v-model="Room.capacity" min="1" />
-    </div>
-
-    <div style="margin-top: 15px;">
-      <p><strong>รายละเอียดห้องประชุม:</strong></p>
-      <input type="text" v-model="Room.description" placeholder="คำอธิบาย" class="input-description" />
-    </div>
-    <button @click="handleCreate" class="create-room">สร้างห้อง</button>
-  </div>
-</div>
 </template>
 
 <style scoped>
@@ -213,10 +246,10 @@ button {
   padding: 10px;
   box-shadow: #ccc 0px 0px 40px;
   margin-left: 10px;
-  max-width: 400px; 
-  max-height: 400px; 
-  object-fit: cover; 
-  overflow: hidden; 
+  max-width: 400px;
+  max-height: 400px;
+  object-fit: cover;
+  overflow: hidden;
 }
 
 .input-image {
@@ -300,7 +333,6 @@ button {
 .form-right {
   margin-left: 15px;
 }
-
 
 .vue-cropper {
   max-width: 350px;

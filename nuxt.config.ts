@@ -33,4 +33,10 @@ export default defineNuxtConfig({
       apiBase: '', // can be overridden by NUXT_PUBLIC_API_BASE environment variable
     }
   },
-})
+  routeRules: {
+    // ไม่ต้องใส่ ถ้าใช้ global middleware
+  },
+  imports: {
+    dirs: ["middleware"]
+  },
+});

@@ -1,31 +1,36 @@
-// import axio from "axios";
-// import { defineStore } from "pinia";
+import { defineStore } from 'pinia';
+import axios from 'axios';
 
-// const config = useRuntimeConfig()
+export const useUserRoleStore = defineStore('userRole', {
+  state: () => ({
+    currentUserRole: [] as any[], // ✅ แก้จาก null เป็น array
+  }),
 
-// interface UserRole {
-//     id: string;
-//     user_id: string;
-//     role_id: string;
-// }
+  actions: {
+    async getUserRoleById(user_id: string) {
+      const config = useRuntimeConfig();
+      const token = localStorage.getItem('token');
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
-// export const useUserRoleStore = defineStore("userRole", {
-//     state: () => ({
-//         userRoles: [] as UserRole[],
-//     }),
-//     actions: {
-//         async addUserRole(newUserRole: UserRole) {
-//             try {
-//                 const response = await axio.post(`${config.public.apiBase}/api/v1/roles/create`, newUserRole);
-//                 if (response.status === 200) {
-//                     console.log("User role added successfully:", response.data.data);
-//                     return response.data;
-//                 } else {
-//                     console.error("Error adding user role:", response.statusText);
-//                 }
-//             } catch (error) {
-//                 console.error("Error adding user role:", error);
-//             }
-//         }
-//     },
-// });
+      try {
+        const response = await axios.get(`${config.public.apiBase}/api/v1/userRoles/${user_id}`, {
+          headers,
+        });
+
+        console.log("📦 API Response for Role:", response.data);
+
+        if (response.status === 200 && Array.isArray(response.data.data)) {
+          this.currentUserRole = response.data.data;
+          return response.data.data;
+        } else {
+          this.currentUserRole = [];
+          return [];
+        }
+      } catch (error) {
+        console.error("⚠️ ดึง user role ผิดพลาด:", error);
+        this.currentUserRole = [];
+        return [];
+      }
+    },
+  },
+});

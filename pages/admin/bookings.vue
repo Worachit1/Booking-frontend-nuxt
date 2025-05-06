@@ -3,6 +3,9 @@ import { onMounted, ref, computed } from "vue";
 import { useBookingStore } from "@/store/bookingStore";
 import dayjs from "dayjs";
 import "dayjs/locale/th";
+definePageMeta({
+  middleware: ["load-user"] // Corrected middleware name
+});
 
 
 const bookingStore = useBookingStore();
@@ -28,13 +31,12 @@ const selectedBooking = ref(null);
 
 const handleUpdateStatus = async (bookingId, status) => {
     try {
-        const booking = selectedBooking.value;
         const updatedBooking = {
             status: status
         };
         await bookingStore.updateStatusBooking(bookingId, updatedBooking);
-        console.log("Booking status updated:", bookingId, status);
         alert("อัปเดตสถานะเรียบร้อยแล้ว");
+        window.location.reload(); // รีเฟรชหน้าเพื่อแสดงการเปลี่ยนแปลง
     } catch (error) {
         console.error("Error updating booking status:", error);
         alert("เกิดข้อผิดพลาดในการอัปเดต");
@@ -101,7 +103,7 @@ onMounted(async () => {
     <!-- แสดง Modal สำหรับการอัพเดทสถานะการจอง -->
     <div v-if="showModal" class="modal">
         <div class="modal-content">
-            <h3>คุณต้องการอนุมัติหรือปฏิเสธการจองนี้ใช่หรือไม่?</h3>
+            <h3>คุณต้องการอนุมัติ หรือ ปฏิเสธการจองนี้ใช่หรือไม่?</h3>
             <p>ผู้จอง: {{ selectedBooking?.user_name }} {{ selectedBooking?.user_lastname }}</p>
             <p>ห้องที่จอง: {{ selectedBooking?.room_name }}</p>
             <div class="modal-actions">

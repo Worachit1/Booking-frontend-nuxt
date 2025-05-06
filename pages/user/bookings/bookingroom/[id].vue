@@ -5,18 +5,22 @@ import dayGridPlugin from "@fullcalendar/daygrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import thLocale from "@fullcalendar/core/locales/th";
 import { useBookingStore } from "@/store/bookingStore";
+import { useRoomStore } from "@/store/roomStore";
+import { useRoute } from "vue-router";
 import dayjs from "dayjs";
 import "dayjs/locale/th";
-definePageMeta({
-  middleware: ["load-user"] // Corrected middleware name
-});
 
+// รับ room_id จาก URL
+const route = useRoute();
+const roomId = route.params.id; // ดึง room_id จาก URL
 const bookingStore = useBookingStore();
+const roomStore = useRoomStore();
 const events = ref([]);
+const roomName = ref(""); // เพิ่มตัวแปรสำหรับชื่อห้อง
 
-// โหลดข้อมูล bookings
+// ฟังก์ชันโหลดข้อมูลการจอง
 const loadBookings = async () => {
-  await bookingStore.fetchBookings();
+  await bookingStore.fetchBookingByRoomId(roomId); // ดึงข้อมูลการจองจาก API ตาม room_id
   events.value = bookingStore.bookings.map((booking) => {
     let backgroundColor = "#04bd35"; // ค่าเริ่มต้นเป็นสีเขียวสำหรับ "Approved"
 
@@ -41,8 +45,16 @@ const loadBookings = async () => {
       borderColor: backgroundColor, // ใช้สีตามสถานะ
     };
   });
-};
 
+  // ดึงชื่อห้องจาก roomStore หากห้องนั้นมีการจอง
+  if (bookingStore.bookings.length > 0) {
+    roomName.value = bookingStore.bookings[0].room_name; // กรณีมีการจอง
+  } else {
+    // ถ้าไม่มีการจองให้ดึงข้อมูลห้องจาก roomStore
+    const roomData = await roomStore.getById(roomId);
+    roomName.value = roomData ? roomData.name : "ไม่ระบุห้อง"; // ใช้ชื่อห้องจาก roomStore
+  }
+};
 
 // ตั้งค่า FullCalendar
 const calendarOptions = computed(() => ({
@@ -58,7 +70,6 @@ const calendarOptions = computed(() => ({
   },
   height: "auto", // เพื่อปรับขนาดหน้าจอปฏิทินอัตโนมัติ
   contentHeight: "auto", // สำหรับเนื้อหาภายในที่ปรับขนาด
-
 }));
 
 // Popup รายละเอียดเมื่อกดที่ event
@@ -73,6 +84,9 @@ function handleEventClick(info) {
 function closePopup() {
   popupVisible.value = false;
 }
+
+// วันปัจจุบัน
+const todayDate = dayjs().format("DD/MM/YYYY");
 
 // ตารางการจองวันนี้
 const todayBookings = computed(() => {
@@ -107,7 +121,7 @@ function goToDate() {
 }
 
 onMounted(() => {
-  loadBookings();
+  loadBookings(); // โหลดข้อมูลการจองเมื่อหน้าเพจโหลด
 });
 </script>
 
@@ -117,20 +131,15 @@ onMounted(() => {
       <!-- 🎯 ซ้าย: ปฏิทิน -->
       <div class="left-content">
         <div class="header">ปฏิทินการจอง</div>
-
+        <div class="header">ตารางการจอง ของห้อง: {{ roomName }}</div>
+        <!-- 🔍 ค้นหาวันที่ -->
+        <div class="calendar-search">
+          <input type="date" v-model="searchDate" class="date-input" />
+          <button @click="goToDate" class="search-button">ค้นหา</button>
+        </div>
         <div class="calendar-container">
-          <div class="calendar-header-row">
-            <div class="header">ตารางการจองทั้งหมด</div>
-            <!-- 🔍 ค้นหาวันที่ -->
-            <div class="calendar-search">
-              <input type="date" v-model="searchDate" class="date-input" />
-              <button @click="goToDate" class="search-button">ค้นหา</button>
-            </div>
-          </div>
           <FullCalendar :options="calendarOptions" />
-          <div class="calendar-footer">
-            <a class="booking-button" href="/user/bookings/createBooking">จองห้อง</a>
-          </div>
+          <a href="/bookings/createBooking">จองห้อง</a>
         </div>
       </div>
 
@@ -139,7 +148,6 @@ onMounted(() => {
         <!-- 📌 ตารางการจองวันนี้ -->
         <div class="today-bookings">
           <h2>📌 ตารางการจองวันนี้ ({{ dayjs().locale('th').format('D MMMM YYYY') }})</h2>
-
           <div v-if="todayBookings.length > 0">
             <table border="1" cellpadding="8" cellspacing="0" style="width: 100%; margin-bottom: 20px;">
               <thead>
@@ -170,7 +178,6 @@ onMounted(() => {
             ไม่มีการจองในวันนี้
           </div>
         </div>
-
 
         <!-- 📋 ตารางรวมการจองทั้งหมด -->
         <div class="all-bookings">
@@ -209,7 +216,6 @@ onMounted(() => {
           <div v-else class="no-bookings">
             ไม่มีข้อมูลการจอง
           </div>
-
         </div>
       </div>
     </div>
@@ -247,6 +253,8 @@ onMounted(() => {
     </div>
   </div>
 </template>
+
+
 
 <style scoped>
 .app-container {
@@ -451,6 +459,7 @@ onMounted(() => {
   gap: 10px;
   margin-top: 12px;
   margin-right: 10px;
+  justify-content: flex-end;
 }
 
 .date-input {

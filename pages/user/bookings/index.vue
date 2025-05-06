@@ -7,6 +7,9 @@ import thLocale from "@fullcalendar/core/locales/th";
 import { useBookingStore } from "@/store/bookingStore";
 import dayjs from "dayjs";
 import "dayjs/locale/th";
+definePageMeta({
+  middleware: ["load-user"] // Corrected middleware name
+});
 
 const bookingStore = useBookingStore();
 const events = ref([]);
