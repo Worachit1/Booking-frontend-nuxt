@@ -139,7 +139,9 @@ onMounted(() => {
         </div>
         <div class="calendar-container">
           <FullCalendar :options="calendarOptions" />
-          <a href="/bookings/createBooking">จองห้อง</a>
+          <div class="calendar-footer">
+            <a class="booking-button" href="/user/bookings/createBooking">จองห้อง</a>
+          </div>
         </div>
       </div>
 

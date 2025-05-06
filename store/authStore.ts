@@ -23,42 +23,42 @@ export const useAuthStore = defineStore("auth", {
     actions: {
         async login(payload: { email: string; password: string }) {
             try {
-              console.log("Login Payload:", payload);
-      
-              const response = await axios.post(
-                `${config.public.apiBase}/api/v1/login`,
-                payload,
-                { withCredentials: true }
-              );
-      
-              console.log("Login Response:", response.data);
-      
-              const user = response.data.user;
-              const token = response.data.token;
-              
-              if (!user || !token) {
-                throw new Error("ข้อมูลผู้ใช้ไม่สมบูรณ์");
-              }
-              
-              // จัดเก็บ token ใน localStorage ถ้าต้องการให้ใช้ใน session ถัดไป
-              localStorage.setItem("token", token);
-              localStorage.setItem("user_id", user.id);
-              localStorage.setItem("user_email", user.email);
-              localStorage.setItem("user_first_name", user.first_name);
-              localStorage.setItem("user_last_name", user.last_name);
-              localStorage.setItem("user_image_url", user.image_url);
-              localStorage.setItem("user_position", user.position_id); // หรือชื่อของตำแหน่ง
-              
-              this.user = user;
-              this.token = token;
-      
-              localStorage.setItem("token", token);
-              return user;
+                console.log("Login Payload:", payload);
+
+                const response = await axios.post(
+                    `${config.public.apiBase}/api/v1/login`,
+                    payload,
+                    { withCredentials: true }
+                );
+
+                console.log("Login Response:", response.data);
+
+                const user = response.data.user;
+                const token = response.data.token;
+
+                if (!user || !token) {
+                    throw new Error("ข้อมูลผู้ใช้ไม่สมบูรณ์");
+                }
+
+                // จัดเก็บ token ใน localStorage ถ้าต้องการให้ใช้ใน session ถัดไป
+                localStorage.setItem("token", token);
+                localStorage.setItem("user_id", user.id);
+                localStorage.setItem("user_email", user.email);
+                localStorage.setItem("user_first_name", user.first_name);
+                localStorage.setItem("user_last_name", user.last_name);
+                localStorage.setItem("user_image_url", user.image_url);
+                localStorage.setItem("user_position", user.position_id); // หรือชื่อของตำแหน่ง
+
+                this.user = user;
+                this.token = token;
+
+                localStorage.setItem("token", token);
+                return user;
             } catch (error: any) {
-              console.error("Login error:", error);
-              throw new Error(error.response?.data?.message || "เข้าสู่ระบบไม่สำเร็จ");
+                console.error("Login error:", error);
+                throw new Error(error.response?.data?.message || "เข้าสู่ระบบไม่สำเร็จ");
             }
-          },
+        },
         async logout() {
             try {
                 await axios.post(
@@ -70,8 +70,17 @@ export const useAuthStore = defineStore("auth", {
                         },
                     }
                 );
+                console.log("Logout successfully");
                 this.user = null;
                 this.token = null;
+
+                localStorage.removeItem("token");
+                localStorage.removeItem("user_id");
+                localStorage.removeItem("user_email");
+                localStorage.removeItem("user_first_name");
+                localStorage.removeItem("user_last_name");
+                localStorage.removeItem("user_image_url");
+                localStorage.removeItem("user_position");
             } catch (error) {
                 console.error("Logout error:", error);
             }

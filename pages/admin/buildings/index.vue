@@ -1,6 +1,8 @@
 <script setup>
 import { onMounted, ref } from "vue";
 import { useBuildingStore } from "@/store/buildingStore";
+import { useBookingStore } from "@/store/bookingStore";
+
 definePageMeta({
   middleware: ["load-user"] // Corrected middleware name
 });
@@ -10,11 +12,11 @@ const buildingStore = useBuildingStore();
 const buildings = ref([]);
 const editableBuildings = ref([]);
 
+
 // โหลดข้อมูลเมื่อ mount
 onMounted(async () => {
   await buildingStore.fetchBuildings();
   buildings.value = buildingStore.buildings;
-
   editableBuildings.value = buildings.value.map((b) => ({
     ...b,
     isEditing: false,
@@ -59,16 +61,33 @@ const confirmDelete = (building) => {
 
 const deleteBuilding = async () => {
   if (buildingToDelete.value) {
-    await buildingStore.deleteBuilding(buildingToDelete.value.id);
-    await buildingStore.fetchBuildings();
+    // โหลดรายการการจอง
+    await bookingStore.fetchBookings();
+    bookings.value = bookingStore.bookings;
 
-    buildings.value = buildingStore.buildings;
-    editableBuildings.value = buildings.value.map((b) => ({ ...b, isEditing: false }));
+    // หา roomId ที่อยู่ในอาคารนี้
+    const buildingId = buildingToDelete.value.id;
+    const roomsInBuilding = await buildingStore.getRoomsByBuildingId(buildingId); // คุณต้องมีฟังก์ชันนี้ใน store
+
+    // เช็กว่ามีห้องไหนในอาคารนี้ที่ถูกจองอยู่หรือไม่
+    const hasBooking = bookings.value.some(booking =>
+      roomsInBuilding.some(room => room.id === booking.room_id && booking.status !== 'cancelled')
+    );
+
+    if (hasBooking) {
+      alert("ไม่สามารถลบอาคารนี้ได้ เนื่องจากยังมีการจองอยู่ในห้องของอาคารนี้");
+    } else {
+      await buildingStore.deleteBuilding(buildingId);
+      await buildingStore.fetchBuildings();
+      buildings.value = buildingStore.buildings;
+      editableBuildings.value = buildings.value.map((b) => ({ ...b, isEditing: false }));
+    }
 
     buildingToDelete.value = null;
     showDeleteModal.value = false;
   }
 };
+
 
 const closeModals = () => {
   showModal.value = false;

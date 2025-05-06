@@ -38,6 +38,12 @@ const toggleSidebar = () => {
 const filteredRooms = (buildingId) => {
   return building_rooms.value.filter((br) => br.building_id === buildingId);
 };
+const openRoomId = ref(null);
+
+const toggleRoom = (roomId) => {
+  openRoomId.value = openRoomId.value === roomId ? null : roomId;
+};
+
 
 const isAdmin = computed(() => currentUserRole.value?.[0]?.role_name === "Admin");
 
@@ -78,7 +84,7 @@ onMounted(async () => {
         <a href="/" class="home-link">
           <img src="/public/images/logo_sidebar.png" alt="menu"
             style="width: 100px; height: 100px; object-fit: contain; margin-top: -15%" />
-          <span style="font-family: Arial, sans-serif; font-size: 16px">BOOKING ROOM</span>
+          <span style=" font-size: 16px">BOOKING ROOM</span>
         </a>
       </div>
       <br />
@@ -104,12 +110,28 @@ onMounted(async () => {
               : 'fas fa-chevron-down'
               " />
           </div>
-
+          <!-- รายการห้องในอาคาร -->
           <ul v-if="openBuildingId === b.id" class="dropdown-sub">
             <li v-for="room in filteredRooms(b.id)" :key="room.building_room_id" class="dropdown-sub-item">
-              <router-link :to="`/user/bookings/bookingroom/${room.room_id}`" class="room-link">
+              <!-- ชั้นแรก: ชื่อห้องที่กดเพื่อเปิด dropdown -->
+              <div @click="toggleRoom(room.room_id)" class="room-link" style="cursor: pointer;">
                 🏠 {{ room.room_name }}
-              </router-link>
+                <i :class="openRoomId === room.room_id ? 'fas fa-chevron-up ml-1' : 'fas fa-chevron-down ml-1'"></i>
+              </div>
+
+              <!-- ชั้นสอง: รายการภายใต้ห้องนั้น -->
+              <ul v-if="openRoomId === room.room_id" class="dropdown-sub-sub">
+                <li>
+                  <router-link :to="`/user/bookings/bookingroom/${room.room_id}`" class="dropdown-sub-item">
+                    📋 รายการจอง
+                  </router-link>
+                </li>
+                <li>
+                  <router-link :to="`/user/bookings/detailroom/${room.room_id}`"class="dropdown-sub-item">
+                    🛠 รายละเอียดห้อง
+                  </router-link>
+                </li>
+              </ul>
             </li>
           </ul>
         </li>
@@ -123,18 +145,15 @@ onMounted(async () => {
       <!-- ✅ เฉพาะ Admin  เท่านั้น -->
       <div v-if="isRoleLoaded && isAdmin">
         <a href="/admin/buildings" class="home-link">
-          <i class="fas fa-calendar-check mr-2"></i> เพิ่มอาคาร
+          <i class="fas fa-calendar-check mr-2"></i> จัดการอาคาร
         </a>
         <a href="/admin/rooms" class="home-link">
-          <i class="fas fa-calendar-check mr-2"></i> เพิ่มห้อง
+          <i class="fas fa-calendar-check mr-2"></i> จัดการห้อง
         </a>
         <a href="/admin/bookings" class="home-link">
           <i class="fas fa-calendar-check mr-2"></i> รายการจองห้อง
         </a>
       </div>
-
-
-
     </div>
   </div>
 </template>
@@ -231,6 +250,7 @@ onMounted(async () => {
   transition: 0.2s;
   text-decoration: none;
 }
+
 
 .room-link {
   text-decoration: none;

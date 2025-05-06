@@ -7,7 +7,6 @@ definePageMeta({
   middleware: ["load-user"] // Corrected middleware name
 });
 
-
 const route = useRoute();
 const roomId = route.params.id;
 const roomStore = useRoomStore();
@@ -52,8 +51,6 @@ onMounted(async () => {
         </div>
     </div>
 </template>
-
-
 
 <style scoped>
 .room-details-container {

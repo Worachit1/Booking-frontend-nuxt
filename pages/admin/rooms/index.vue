@@ -2,6 +2,10 @@
 import { ref, onMounted } from "vue";
 import { useRoomStore } from "@/store/roomStore";
 import { useBuildingStore } from "@/store/buildingStore";
+import { useRouter } from "vue-router";
+
+
+const router = useRouter();
 definePageMeta({
   middleware: ["load-user"] // Corrected middleware name
 });
@@ -26,8 +30,6 @@ const fetchBuildings = async () => {
   buildings.value = buildingStore.buildings;
 };
 
-
-
 const handleDeleteRoom = async (roomId) => {
   try {
     await roomStore.deleteRoom(roomId);
@@ -43,8 +45,7 @@ const handleDeleteRoom = async (roomId) => {
 };
 
 const goTodetail = (id) => {
-  // Redirect to the detail page of the room
-  window.location.href = `/admin/rooms/detail/${id}`;
+  router.push(`/admin/rooms/detail/${id}`);
 };
 
 onMounted(async () => {

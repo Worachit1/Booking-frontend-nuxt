@@ -6,21 +6,29 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
   const userStore = useUserStore();
   const userRoleStore = useUserRoleStore();
 
-  const userId = Array.isArray(to.params.id) ? to.params.id[0] : to.params.id || localStorage.getItem("user_id");
+  const userId =
+    Array.isArray(to.params.id) ? to.params.id[0] : to.params.id || localStorage.getItem("user_id");
 
   if (!userId) {
-    console.warn("❗ ไม่มี user_id, redirect ไป login");
-    return navigateTo("/login");
+    console.warn("⚠️ ไม่พบ user_id — จะไม่ redirect เพราะอาจเป็น guest");
+    return; // ✅ แค่ return ออก ไม่ redirect
   }
 
-  // ถ้ายังไม่มีข้อมูลใน store ให้โหลดใหม่
+  // โหลดข้อมูล user ถ้ายังไม่มี
   if (!userStore.currentUser || userStore.currentUser.id !== userId) {
-    if (typeof userId === "string") {
+    try {
       await userStore.getUserById(userId);
+    } catch (err) {
+      console.error("โหลด user ไม่สำเร็จ:", err);
     }
   }
 
+  // โหลด role ด้วยถ้าจำเป็น
   if (!userRoleStore.currentUserRole || userRoleStore.currentUserRole.length === 0) {
-    await userRoleStore.getUserRoleById(userId);
+    try {
+      await userRoleStore.getUserRoleById(userId);
+    } catch (err) {
+      console.error("โหลด role ไม่สำเร็จ:", err);
+    }
   }
 });

@@ -1,12 +1,16 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useUserStore } from '@/store/userStore';
+import { useAuthStore } from '@/store/authStore';
 import loginmodal from '@/components/loginModal.vue';
 import registerModal from '@/components/registerModal.vue';
 
 const userStore = useUserStore();
+const authStore = useAuthStore();
 const user = computed(() => userStore.currentUser);
 const isLoading = computed(() => userStore.isLoading);
+const isLoggedIn = computed(() => !!user.value?.id);
+
 
 const userProfileImage = computed(() =>
   user.value?.image_url || '/images/default-profile.png'
@@ -48,6 +52,17 @@ function openRegisterModal() {
   isModalOpenRegister.value = true; // เปิด modal register
 }
 
+async function logout() {
+  try {
+    await authStore.logout();
+    closeMenu();
+    window.location.reload();
+    window.location.href = '/'; // Redirect to home page after logout
+  } catch (error) {
+    console.error('Logout failed:', error);
+  }
+  showMenu.value = false;
+}
 
 onMounted(() => {
   document.addEventListener('click', handleClickOutside);
@@ -70,7 +85,7 @@ onUnmounted(() => {
 
       <div v-if="showMenu" class="dropdown-menu">
         <ul>
-          <template v-if="user?.user_id">
+          <template v-if="isLoggedIn">
             <li @click="viewProfile">ดูโปรไฟล์</li>
             <li @click="logout">ออกจากระบบ</li>
           </template>
@@ -78,6 +93,7 @@ onUnmounted(() => {
             <li @click="openLoginModal">เข้าสู่ระบบ</li>
             <li @click="openRegisterModal">สมัครสมาชิก</li>
           </template>
+
         </ul>
       </div>
     </div>

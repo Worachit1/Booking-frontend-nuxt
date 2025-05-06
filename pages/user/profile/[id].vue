@@ -11,17 +11,21 @@ const userStore = useUserStore();
 const userRoleStore = useUserRoleStore();
 
 const user = computed(() => userStore.currentUser || null);
-const userRole = computed(() => userRoleStore.currentUserRole || null); // ดึงข้อมูล userRole จาก store
+const userRole = computed(() => userRoleStore.currentUserRole || null);
 
 onMounted(async () => {
-  if (userId) {
-    await userStore.getUserById(userId);
-    const roleData = await userRoleStore.getUserRoleById(userId);
-    console.log("✅ โหลด Role สำเร็จ:", roleData); // ✅ ควรแสดงข้อมูลที่ถูกต้อง
+  if (!localStorage.getItem("reloaded")) {
+    localStorage.setItem("reloaded", "true");
+    window.location.reload();
+  } else {
+    localStorage.removeItem("reloaded");
+    if (userId) {
+      await userStore.getUserById(userId);
+    }
   }
 });
-
 </script>
+
 
 <template>
   <div v-if="user">
