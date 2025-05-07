@@ -65,8 +65,9 @@ const handleRegister = async () => {
         position_name: u.position_name,
         image_url: u.imageFile,
     });
+    console.log("📦 REGISTER RESPONSE:", res);
 
-    if (res?.data?.ID) {
+    if (res?.ID || res?.data?.ID) {
         alert("สมัครสมาชิกสำเร็จ!");
         closeModal();
     } else {

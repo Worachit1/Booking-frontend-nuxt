@@ -32,6 +32,19 @@ export const useBuilding_RoomStore = defineStore("building_room", {
         console.error("Error fetching building:", error);
       }
     },
+    async getRoomsByBuildingId(building_id: string) {
+      try {
+        const response = await axios.get(`${config.public.apiBase}/api/v1/buildingRooms/buildRoom/${building_id}`);
+        console.log("response", response)
+        if (response.status === 200) {
+          return response.data.data; 
+        } else {
+          console.error("Error fetching building:", response.statusText);
+        }
+      } catch (error) {
+        console.error("Error fetching building:", error);
+      }
+    },
     async addBuilding_Room(newBuilding_Room: {building_id: string; room_id: string; }) {
       try {
         const response = await axios.post(`${config.public.apiBase}/api/v1/buildingRooms/create`, newBuilding_Room);

@@ -2,90 +2,127 @@
 import { onMounted, ref } from "vue";
 import { useBuildingStore } from "@/store/buildingStore";
 import { useBookingStore } from "@/store/bookingStore";
+import { useBuilding_RoomStore } from "~/store/building_roomStore";
 
 definePageMeta({
-  middleware: ["load-user"] // Corrected middleware name
+  middleware: ["load-user"],
 });
 
-
+// Store
 const buildingStore = useBuildingStore();
+const bookingStore = useBookingStore();
+const buildingRoomStore = useBuilding_RoomStore();
+
+// State
 const buildings = ref([]);
 const editableBuildings = ref([]);
+const bookings = ref([]);
+const showModal = ref(false);
+const showDeleteModal = ref(false);
+const newBuildingName = ref("");
+const buildingToDelete = ref(null);
 
-
-// โหลดข้อมูลเมื่อ mount
-onMounted(async () => {
+// Fetch and setup
+const loadBuildings = async () => {
   await buildingStore.fetchBuildings();
   buildings.value = buildingStore.buildings;
   editableBuildings.value = buildings.value.map((b) => ({
     ...b,
     isEditing: false,
   }));
-});
+};
 
+onMounted(loadBuildings);
+
+// Edit
 const startEdit = (index) => {
   editableBuildings.value[index].isEditing = true;
 };
 
 const saveEdit = async (id, index) => {
-  const updated = {
-    name: editableBuildings.value[index].name,
-  };
+  const updated = { name: editableBuildings.value[index].name };
   await buildingStore.updateBuilding(id, updated);
   editableBuildings.value[index].isEditing = false;
+  await loadBuildings(); // Refresh
 };
 
-const showModal = ref(false);
-const newBuildingName = ref("");
-
+// Create
 const createBuilding = async () => {
-  if (!newBuildingName.value.trim()) return;
-
-  await buildingStore.addBuilding({ name: newBuildingName.value });
-  await buildingStore.fetchBuildings();
-
-  buildings.value = buildingStore.buildings;
-  editableBuildings.value = buildings.value.map((b) => ({ ...b, isEditing: false }));
-
+  const name = newBuildingName.value.trim();
+  if (!name) {
+    alert("กรุณากรอกชื่ออาคาร");
+    return;
+  }
+  await buildingStore.addBuilding({ name });
   newBuildingName.value = "";
   showModal.value = false;
+  await loadBuildings();
 };
 
-const showDeleteModal = ref(false);
-const buildingToDelete = ref(null);
-
-const confirmDelete = (building) => {
+// Delete
+const setToDeleteBuilding = (building) => {
   buildingToDelete.value = building;
   showDeleteModal.value = true;
 };
 
 const deleteBuilding = async () => {
-  if (buildingToDelete.value) {
-    // โหลดรายการการจอง
-    await bookingStore.fetchBookings();
-    bookings.value = bookingStore.bookings;
+  if (!buildingToDelete.value) return;
 
-    // หา roomId ที่อยู่ในอาคารนี้
-    const buildingId = buildingToDelete.value.id;
-    const roomsInBuilding = await buildingStore.getRoomsByBuildingId(buildingId); // คุณต้องมีฟังก์ชันนี้ใน store
+  const buildingId = buildingToDelete.value.id;
 
-    // เช็กว่ามีห้องไหนในอาคารนี้ที่ถูกจองอยู่หรือไม่
-    const hasBooking = bookings.value.some(booking =>
-      roomsInBuilding.some(room => room.id === booking.room_id && booking.status !== 'cancelled')
-    );
-
-    if (hasBooking) {
-      alert("ไม่สามารถลบอาคารนี้ได้ เนื่องจากยังมีการจองอยู่ในห้องของอาคารนี้");
-    } else {
-      await buildingStore.deleteBuilding(buildingId);
-      await buildingStore.fetchBuildings();
-      buildings.value = buildingStore.buildings;
-      editableBuildings.value = buildings.value.map((b) => ({ ...b, isEditing: false }));
-    }
-
-    buildingToDelete.value = null;
-    showDeleteModal.value = false;
+  // ดึงห้องในอาคารนั้น
+  let roomsInBuilding = await buildingRoomStore.getRoomsByBuildingId(buildingId);
+  if (!Array.isArray(roomsInBuilding)) {
+    roomsInBuilding = [];
   }
+
+  // ถ้าไม่มีห้องเลย → ลบได้เลย
+  if (roomsInBuilding.length === 0) {
+    await buildingStore.deleteBuilding(buildingId);
+    await refreshBuildings();
+    showDeleteModal.value = false;
+    buildingToDelete.value = null;
+    return;
+  }
+
+  // ถ้ามีห้อง → เช็กการจอง
+  await bookingStore.fetchBookings();
+  bookings.value = bookingStore.bookings;
+
+  const roomIds = roomsInBuilding.map((r) => Number(r.room_id));
+  const hasBooking = bookings.value.some(
+    (booking) =>
+      roomIds.includes(Number(booking.room_id)) &&
+      booking.status.toLowerCase() !== "cancelled"
+  );
+
+  if (hasBooking) {
+    alert("ไม่สามารถลบอาคารนี้ได้ เนื่องจากยังมีการจองที่ยังไม่ถูกยกเลิกในห้องของอาคารนี้");
+  } else {
+    await buildingStore.deleteBuilding(buildingId);
+    await refreshBuildings();
+  }
+
+  showDeleteModal.value = false;
+  buildingToDelete.value = null;
+};
+
+// helper สำหรับรีเฟรชรายการ
+const refreshBuildings = async () => {
+  await buildingStore.fetchBuildings();
+  buildings.value = buildingStore.buildings;
+  editableBuildings.value = buildings.value.map((b) => ({
+    ...b,
+    isEditing: false,
+  }));
+};
+
+
+const confirmAndDelete = async (buildingId) => {
+  await buildingStore.deleteBuilding(buildingId);
+  await loadBuildings();
+  buildingToDelete.value = null;
+  showDeleteModal.value = false;
 };
 
 const closeModals = () => {
@@ -99,9 +136,21 @@ const closeModals = () => {
     <div class="header">
       <h1>แสดงอาคารทั้งหมด</h1>
       <button class="createbuilding" @click="showModal = true">
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"
-          class="svg-icon" width="20px" height="20px">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v6m3-3H9m12 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke-width="1.5"
+          stroke="currentColor"
+          class="svg-icon"
+          width="20px"
+          height="20px"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M12 9v6m3-3H9m12 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
+          />
         </svg>
         เพิ่มอาคาร
       </button>
@@ -121,28 +170,66 @@ const closeModals = () => {
             </td>
             <td>
               <div class="action-buttons">
-                <div style="display: flex; align-items: center;">
-                  <button class="edit" v-if="!b.isEditing" @click="startEdit(index)">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-                      stroke="currentColor" class="svg-icon" width="20px" height="20px">
-                      <path stroke-linecap="round" stroke-linejoin="round"
-                        d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
+                <div style="display: flex; align-items: center">
+                  <button
+                    class="edit"
+                    v-if="!b.isEditing"
+                    @click="startEdit(index)"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke-width="1.5"
+                      stroke="currentColor"
+                      class="svg-icon"
+                      width="20px"
+                      height="20px"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10"
+                      />
                     </svg>
                     แก้ไข
                   </button>
                   <button class="confirm" v-else @click="saveEdit(b.id, index)">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-                      stroke="currentColor" class="svg-icon" width="20px" height="20px">
-                      <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0=" />
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke-width="1.5"
+                      stroke="currentColor"
+                      class="svg-icon"
+                      width="20px"
+                      height="20px"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0="
+                      />
                     </svg>
                     บันทึก
                   </button>
 
-                  <button class="delete" @click="confirmDelete(b)">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-                      stroke="currentColor" class="svg-icon" width="20px" height="20px">
-                      <path stroke-linecap="round" stroke-linejoin="round"
-                        d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+                  <button @click="setToDeleteBuilding(b)" class="delete">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke-width="1.5"
+                      stroke="currentColor"
+                      class="svg-icon"
+                      width="20px"
+                      height="20px"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0"
+                      />
                     </svg>
                     ลบ
                   </button>
@@ -163,9 +250,15 @@ const closeModals = () => {
       <div class="modal">
         <template v-if="showModal">
           <h3>เพิ่มอาคารใหม่</h3>
-          <input v-model="newBuildingName" type="text" placeholder="ชื่ออาคาร" />
+          <input
+            v-model="newBuildingName"
+            type="text"
+            placeholder="ชื่ออาคาร"
+          />
           <div class="modal-actions">
-            <button @click="createBuilding" class="modal-confirm">บันทึก</button>
+            <button @click="createBuilding" class="modal-confirm">
+              บันทึก
+            </button>
             <button @click="closeModals" class="modal-cancel">ยกเลิก</button>
           </div>
         </template>
@@ -173,7 +266,9 @@ const closeModals = () => {
         <template v-else-if="showDeleteModal">
           <h3>คุณแน่ใจหรือไม่ที่จะลบ "{{ buildingToDelete?.name }}" ?</h3>
           <div class="modal-actions">
-            <button @click="deleteBuilding" class="modal-confirm">ยืนยัน</button>
+            <button @click="deleteBuilding" class="modal-confirm">
+              ยืนยัน
+            </button>
             <button @click="closeModals" class="modal-cancel">ยกเลิก</button>
           </div>
         </template>
@@ -350,6 +445,4 @@ h1 {
 .modal-cancel:hover {
   background-color: #cf4c4c;
 }
-
- 
 </style>
