@@ -11,7 +11,11 @@ export default defineNuxtConfig({
       link: [
         {
           rel: 'stylesheet',
-          href: 'https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap', // ตัวอย่างการใช้ฟอนต์จาก Google Fonts
+          href: 'https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap', 
+        },
+        {
+          rel: 'stylesheet',
+          href: 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css',
         },
       ],
     },
@@ -39,4 +43,5 @@ export default defineNuxtConfig({
   imports: {
     dirs: ["middleware"]
   },
+  
 });

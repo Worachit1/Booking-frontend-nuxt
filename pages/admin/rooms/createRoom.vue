@@ -65,7 +65,7 @@ const handleCreate = async () => {
     });
 
     alert("สร้างห้องสำเร็จ!");
-    window.location.href = "/rooms";
+    window.location.href = "/admin/rooms";
   } else {
     alert("สร้างห้องไม่สำเร็จ");
   }

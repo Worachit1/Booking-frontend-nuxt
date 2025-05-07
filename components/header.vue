@@ -1,31 +1,59 @@
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue';
-import { useUserStore } from '@/store/userStore';
-import { useAuthStore } from '@/store/authStore';
-import loginmodal from '@/components/loginModal.vue';
-import registerModal from '@/components/registerModal.vue';
+import { ref, computed, onMounted, onUnmounted } from "vue";
+import { useUserStore } from "@/store/userStore";
+import { useAuthStore } from "@/store/authStore";
+import { useBookingStore } from "~/store/bookingStore";
+import loginmodal from "@/components/loginModal.vue";
+import registerModal from "@/components/registerModal.vue";
 
+import { useRoute } from "vue-router";
+
+import dayjs from "dayjs";
+import "dayjs/locale/th";
+const formatDate = (date) => {
+  return dayjs(date).locale("th").format("D MMMM YYYY เวลา HH:mm น.");
+};
+
+const route = useRoute();
 const userStore = useUserStore();
 const authStore = useAuthStore();
+const bookingStore = useBookingStore();
+
 const user = computed(() => userStore.currentUser);
 const isLoading = computed(() => userStore.isLoading);
 const isLoggedIn = computed(() => !!user.value?.id);
 
-
-const userProfileImage = computed(() =>
-  user.value?.image_url || '/images/default-profile.png'
+const userProfileImage = computed(
+  () => user.value?.image_url || "/images/default-profile.png"
 );
 const userFirstName = computed(() =>
-  isLoading.value ? 'กำลังโหลด...' : user.value?.first_name || 'Guest'
+  isLoading.value ? "กำลังโหลด..." : user.value?.first_name || "Guest"
 );
 const userLastName = computed(() =>
-  isLoading.value ? '' : user.value?.last_name || 'User'
+  isLoading.value ? "" : user.value?.last_name || "User"
 );
 
 const showMenu = ref(false);
 const profileWrapperRef = ref(null);
 const isModalOpenLogin = ref(false);
 const isModalOpenRegister = ref(false);
+const bookingsDropdownRef = ref(null);
+
+// กรองเฉพาะการจองที่มีสถานะ Pending
+const pendingBookings = computed(() =>
+  bookingStore.bookings.filter((booking) => booking.status === "Pending")
+);
+
+// ตรวจสอบว่ามีการจองที่ Pending หรือไม่
+const hasPendingBookings = computed(() => pendingBookings.value.length > 0);
+const showBookings = ref(false); // ควบคุมการแสดง dropdown
+
+function toggleBookings() {
+  showBookings.value = !showBookings.value;
+}
+function closeBookings() {
+  showBookings.value = false;
+}
 
 function handleProfileClick() {
   showMenu.value = !showMenu.value;
@@ -35,7 +63,7 @@ function closeMenu() {
   showMenu.value = false;
 }
 
-function handleClickOutside(event) {
+function handleClickProfileOutside(event) {
   if (
     profileWrapperRef.value &&
     !profileWrapperRef.value.contains(event.target)
@@ -44,9 +72,18 @@ function handleClickOutside(event) {
   }
 }
 
+function handleClickBookingOutside(event) {
+  if (
+    bookingsDropdownRef.value &&
+    !bookingsDropdownRef.value.contains(event.target) &&
+    !event.target.closest(".bell")
+  ) {
+    closeBookings();
+  }
+}
+
 function openLoginModal() {
   isModalOpenLogin.value = true; // เปิด modal login
-
 }
 function openRegisterModal() {
   isModalOpenRegister.value = true; // เปิด modal register
@@ -57,19 +94,21 @@ async function logout() {
     await authStore.logout();
     closeMenu();
     window.location.reload();
-    window.location.href = '/'; // Redirect to home page after logout
+    window.location.href = "/"; // Redirect to home page after logout
   } catch (error) {
-    console.error('Logout failed:', error);
+    console.error("Logout failed:", error);
   }
   showMenu.value = false;
 }
 
 onMounted(() => {
-  document.addEventListener('click', handleClickOutside);
+  document.addEventListener("click", handleClickBookingOutside);
+  document.addEventListener("click", handleClickProfileOutside);
 });
 
 onUnmounted(() => {
-  document.removeEventListener('click', handleClickOutside);
+  document.removeEventListener("click", handleClickBookingOutside);
+  document.removeEventListener("click", handleClickProfileOutside);
 });
 </script>
 
@@ -77,7 +116,43 @@ onUnmounted(() => {
   <div v-if="!isLoading" class="header">
     <div class="profile-wrapper" ref="profileWrapperRef">
       <div class="profile">
-        <img :src="userProfileImage" alt="Profile" class="profile-image" @click="handleProfileClick" />
+        <!-- กระดิ่ง -->
+        <div class="bell" @click="toggleBookings">
+          <i class="fas fa-bell"></i>
+          <span v-if="hasPendingBookings" class="notification-dot"></span>
+        </div>
+
+        <div
+          v-if="showBookings"
+          class="bookings-dropdown"
+          ref="bookingsDropdownRef"
+        >
+          <ul>
+            <router-link to="/admin/bookings" class="view-all-link">
+              <li
+                v-for="(booking, index) in pendingBookings"
+                :key="index"
+                class="booking"
+              >
+                <p class="room_name">{{ booking.room_name }}</p>
+                <p>
+                  จองโดย: {{ booking.user_name }} {{ booking.user_lastname }}
+                </p>
+                <p>
+                  {{ formatDate(booking.strat_time) }} ถึง
+                  {{ formatDate(booking.end_time) }}
+                </p>
+                <p>------------------------------</p>
+              </li>
+            </router-link>
+          </ul>
+        </div>
+        <img
+          :src="userProfileImage"
+          alt="Profile"
+          class="profile-image"
+          @click="handleProfileClick"
+        />
         <div class="profile-name" @click="handleProfileClick">
           {{ userFirstName }} {{ userLastName }}
         </div>
@@ -93,22 +168,33 @@ onUnmounted(() => {
             <li @click="openLoginModal">เข้าสู่ระบบ</li>
             <li @click="openRegisterModal">สมัครสมาชิก</li>
           </template>
-
         </ul>
       </div>
     </div>
   </div>
 
-  <loginmodal v-if="isModalOpenLogin" @close="isModalOpenLogin = false" @open-register="() => {
-    isModalOpenLogin = false;
-    isModalOpenRegister = true;
-  }" />
-  <registerModal v-if="isModalOpenRegister" @close="isModalOpenRegister = false" @open-login="() => {
-    isModalOpenRegister = false;
-    isModalOpenLogin = true;
-  }" />
-
+  <loginmodal
+    v-if="isModalOpenLogin"
+    @close="isModalOpenLogin = false"
+    @open-register="
+      () => {
+        isModalOpenLogin = false;
+        isModalOpenRegister = true;
+      }
+    "
+  />
+  <registerModal
+    v-if="isModalOpenRegister"
+    @close="isModalOpenRegister = false"
+    @open-login="
+      () => {
+        isModalOpenRegister = false;
+        isModalOpenLogin = true;
+      }
+    "
+  />
 </template>
+
 <style scoped>
 .header {
   width: 100%;
@@ -166,15 +252,15 @@ onUnmounted(() => {
   position: absolute;
   top: 100%;
   right: 0;
-  margin-top: 8px;
-  background-color: whitesmoke;
-  border-radius: 6px;
+  margin-top: 10px;
+  background-color: #2a2a3c;
+  border-radius: 8px;
   padding: 10px 0;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  min-width: 180px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  min-width: 150px;
   z-index: 10000;
-  color: #000;
-  margin-right: 20px;
+  color: #e0e0e0;
+  margin-right: 25px;
 }
 
 .dropdown-menu ul {
@@ -191,7 +277,52 @@ onUnmounted(() => {
 }
 
 .dropdown-menu li:hover {
-  background-color: #f0f0f0;
+  background-color: #f0f0f07a;
+}
+
+.bookings-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 10px;
+  background-color: #2a2a3c;
+  border-radius: 8px;
+  padding: 10px 0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  min-width: 257px;
+  max-height: 350px;
+  /* Limit the height */
+  overflow-y: auto;
+  /* Enable vertical scrolling */
+  z-index: 10000;
+  color: #e0e0e0;
+  margin-right: 30px;
+}
+
+.bookings-dropdown ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.bookings-dropdown li {
+  padding: 10px 20px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.bookings-dropdown li:hover {
+  background-color: #f0f0f07a;
+  color: white;
+}
+
+.view-all-link {
+  text-decoration: none;
+  color: #e0e0e0;
+  font-weight: bold;
+  display: block;
+
 }
 
 .modal-overlay {
@@ -239,5 +370,35 @@ button:hover {
   background-color: #f44336;
   border: none;
   color: white;
+}
+
+.bell {
+  font-size: 20px;
+  margin-right: 30px;
+  cursor: pointer;
+  position: relative;
+  transition: transform 0.3s ease;
+}
+
+.bell:hover {
+  transform: scale(1.3);
+  transition: transform 0.3s ease;
+}
+
+.notification-dot {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  width: 10px;
+  height: 10px;
+  background-color: red;
+  border-radius: 50%;
+  border: 2px solid white;
+}
+
+.room_name {
+  font-weight: bold;
+  font-size: 14px;
+  margin-bottom: 5px;
 }
 </style>

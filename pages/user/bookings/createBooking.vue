@@ -67,6 +67,14 @@ const handleConfirm = async () => {
     alert("เวลาสิ้นสุดต้องมากกว่าเวลาเริ่มต้น");
     return;
   }
+  // ดักเพื่อไม่ใช้ user จองเวลาในอดีต
+  const now = new Date();
+    const startTime = new Date(Booking.value.start_time);
+
+    if (startTime < now) {
+      alert("❗ ไม่สามารถจองวันหรือเวลาในอดีตได้");
+      return;
+    }
 
   showMoadal.value = true;
 };
@@ -78,6 +86,8 @@ const handleCreateBooking = async () => {
       alert("ไม่พบข้อมูลผู้จองหรือเบอร์โทร กรุณาเข้าสู่ระบบใหม่อีกครั้ง");
       return;
     }
+    
+    
 
     const payload = {
       title: Booking.value.title.trim(),

@@ -76,36 +76,19 @@ const deleteBuilding = async () => {
     roomsInBuilding = [];
   }
 
-  // ถ้าไม่มีห้องเลย → ลบได้เลย
+  // ถ้าไม่มีห้องเลย → ลบได้
   if (roomsInBuilding.length === 0) {
     await buildingStore.deleteBuilding(buildingId);
     await refreshBuildings();
-    showDeleteModal.value = false;
-    buildingToDelete.value = null;
-    return;
-  }
-
-  // ถ้ามีห้อง → เช็กการจอง
-  await bookingStore.fetchBookings();
-  bookings.value = bookingStore.bookings;
-
-  const roomIds = roomsInBuilding.map((r) => Number(r.room_id));
-  const hasBooking = bookings.value.some(
-    (booking) =>
-      roomIds.includes(Number(booking.room_id)) &&
-      booking.status.toLowerCase() !== "cancelled"
-  );
-
-  if (hasBooking) {
-    alert("ไม่สามารถลบอาคารนี้ได้ เนื่องจากยังมีการจองที่ยังไม่ถูกยกเลิกในห้องของอาคารนี้");
   } else {
-    await buildingStore.deleteBuilding(buildingId);
-    await refreshBuildings();
+    alert("ไม่สามารถลบอาคารนี้ได้ เนื่องจากยังมีห้องอยู่ในอาคาร");
   }
 
+  // ปิด modal และ reset state
   showDeleteModal.value = false;
   buildingToDelete.value = null;
 };
+
 
 // helper สำหรับรีเฟรชรายการ
 const refreshBuildings = async () => {

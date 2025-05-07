@@ -1,7 +1,9 @@
 <script setup>
-import { ref } from 'vue'
+import { ref,onMounted } from 'vue'
 import Sidebar from '@/components/sidebar.vue'
 import Header from '@/components/header.vue'
+import { useBookingStore } from '@/store/bookingStore'
+
 definePageMeta({
   middleware: ["load-user"] // Corrected middleware name
 });
@@ -11,6 +13,11 @@ const toggleSidebar = () => {
   isSidebarOpen.value = !isSidebarOpen.value
   document.body.style.overflow = isSidebarOpen.value ? 'hidden' : ''
 }
+
+onMounted(() => {
+  const bookingStore = useBookingStore();
+  bookingStore.fetchBookings();
+});
 </script>
 
 <template>

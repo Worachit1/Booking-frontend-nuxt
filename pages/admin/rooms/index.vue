@@ -72,21 +72,21 @@ onMounted(async () => {
         <table class="table table-bordered table-striped" v-if="rooms.length">
           <thead>
             <tr>
-              <th>ชื่อห้อง</th>
-              <th>คำอธิบาย</th>
-              <th>ความจุ</th>
               <th>รูปภาพ</th>
+              <th>ชื่อห้อง</th>
+              <th>จำนวนที่เข้าประชุมได้</th>
+              <th>คำอธิบาย</th>
               <th>จัดการ</th>
             </tr>
           </thead>
           <tbody>
             <tr v-for="room in rooms" :key="room.id">
-              <td>{{ room.name }}</td>
-              <td>{{ room.description }}</td>
-              <td>{{ room.capacity }}</td>
               <td>
                 <img :src="room.image_url" alt="room" width="100" height="100" />
               </td>
+              <td>{{ room.name }}</td>
+              <td>{{ room.capacity }}</td>
+              <td>{{ room.description }}</td>
               <td>
                 <button class="btn-edit" @click="goTodetail(room.id)">ดูข้อมูล</button>
               </td>
