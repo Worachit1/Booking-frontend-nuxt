@@ -10,13 +10,11 @@ definePageMeta({
 
 // Store
 const buildingStore = useBuildingStore();
-const bookingStore = useBookingStore();
 const buildingRoomStore = useBuilding_RoomStore();
 
 // State
 const buildings = ref([]);
 const editableBuildings = ref([]);
-const bookings = ref([]);
 const showModal = ref(false);
 const showDeleteModal = ref(false);
 const newBuildingName = ref("");

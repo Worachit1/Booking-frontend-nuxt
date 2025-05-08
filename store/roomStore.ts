@@ -28,7 +28,6 @@ export const useRoomStore = defineStore("room", {
                 console.error("Error fetching rooms:", error);
             }
         },
-
         async getById(room_id: string) {
             try {
                 const response = await axios.get(`${config.public.apiBase}/api/v1/rooms/${room_id}`);

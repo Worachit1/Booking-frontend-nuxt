@@ -47,7 +47,7 @@ export const useAuthStore = defineStore("auth", {
                 localStorage.setItem("user_first_name", user.first_name);
                 localStorage.setItem("user_last_name", user.last_name);
                 localStorage.setItem("user_image_url", user.image_url);
-                localStorage.setItem("user_position", user.position_id); // หรือชื่อของตำแหน่ง
+                localStorage.setItem("user_position", user.position_id); 
 
                 this.user = user;
                 this.token = token;

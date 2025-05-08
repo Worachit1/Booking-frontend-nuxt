@@ -56,8 +56,6 @@ export const useUserStore = defineStore("user", {
                 this.isLoading = false;
             }
         },
-
-        // ✅ ทำแบบเดียวกันกับ addUser และ updateUser
         async addUser(newUser: any) {
             const config = useRuntimeConfig();
             const formData = new FormData();
