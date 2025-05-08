@@ -17,7 +17,7 @@ export const useUserRoleStore = defineStore('userRole', {
           headers,
         });
 
-        console.log("📦 API Response for Role:", response.data);
+        // console.log("📦 API Response for Role:", response.data);
 
         if (response.status === 200 && Array.isArray(response.data.data)) {
           this.currentUserRole = response.data.data;

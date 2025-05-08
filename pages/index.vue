@@ -39,6 +39,7 @@ const loadBookings = async () => {
       room: booking.room_name || "ไม่ระบุห้อง",
       backgroundColor: backgroundColor, // ใช้สีตามสถานะ
       borderColor: backgroundColor, // ใช้สีตามสถานะ
+      status: booking.status,
     };
   });
 };
@@ -59,6 +60,10 @@ const calendarOptions = computed(() => ({
   height: "auto", // เพื่อปรับขนาดหน้าจอปฏิทินอัตโนมัติ
   contentHeight: "auto", // สำหรับเนื้อหาภายในที่ปรับขนาด
 
+  eventDidMount: function (info) {
+    info.el.style.cursor = "pointer"; // ให้เมาส์เป็นมือ
+    info.el.classList.add(`status-${info.event.extendedProps.status.toLowerCase()}`);
+  }
 }));
 
 // Popup รายละเอียดเมื่อกดที่ event
@@ -127,7 +132,7 @@ onMounted(() => {
               <button @click="goToDate" class="search-button">ค้นหา</button>
             </div>
           </div>
-          <FullCalendar :options="calendarOptions" />
+          <FullCalendar :options="calendarOptions"/>
           <div class="calendar-footer">
             <a class="booking-button" href="/user/bookings/createBooking">จองห้อง</a>
           </div>
@@ -457,6 +462,20 @@ onMounted(() => {
   padding: 8px;
   border: 1px solid #ccc;
   border-radius: 4px;
+  cursor: pointer;
+}
+
+/* hover ของstatus ที่ขึ้นในหน้าปฏิทิน */
+::v-deep(.status-pending:hover) {
+  background-color: #f0e68c !important;
+}
+
+::v-deep(.status-approved:hover) {
+  background-color: #90ee90 !important;
+}
+
+::v-deep(.status-cancel:hover) {
+  background-color: #f08080 !important; 
 }
 
 ::v-deep(.fc-button-group) {

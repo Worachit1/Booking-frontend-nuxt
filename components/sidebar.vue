@@ -60,10 +60,6 @@ onMounted(async () => {
   if (userId) {
     await userRoleStore.getUserRoleById(userId);
     isRoleLoaded.value = true;
-
-    console.log("currentUserRole:", currentUserRole.value);
-    console.log("role_name:", currentUserRole.value?.[0]?.role_name);
-    console.log("isAdmin:", isAdmin.value);
   }
 });
 
@@ -127,7 +123,7 @@ onMounted(async () => {
                   </router-link>
                 </li>
                 <li>
-                  <router-link :to="`/user/bookings/detailroom/${room.room_id}`"class="dropdown-sub-item">
+                  <router-link :to="`/user/bookings/detailroom/${room.room_id}`" class="dropdown-sub-item">
                     🛠 รายละเอียดห้อง
                   </router-link>
                 </li>

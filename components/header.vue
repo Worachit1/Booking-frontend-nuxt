@@ -2,6 +2,7 @@
 import { ref, computed, onMounted, onUnmounted } from "vue";
 import { useUserStore } from "@/store/userStore";
 import { useAuthStore } from "@/store/authStore";
+import { useUserRoleStore } from "@/store/userRoleStore";
 import { useBookingStore } from "~/store/bookingStore";
 import loginmodal from "@/components/loginModal.vue";
 import registerModal from "@/components/registerModal.vue";
@@ -18,6 +19,8 @@ const route = useRoute();
 const userStore = useUserStore();
 const authStore = useAuthStore();
 const bookingStore = useBookingStore();
+const userRoleStore = useUserRoleStore();
+const userId = localStorage.getItem("user_id");
 
 const user = computed(() => userStore.currentUser);
 const isLoading = computed(() => userStore.isLoading);
@@ -38,15 +41,45 @@ const profileWrapperRef = ref(null);
 const isModalOpenLogin = ref(false);
 const isModalOpenRegister = ref(false);
 const bookingsDropdownRef = ref(null);
+const currentUserRole = computed(() => userRoleStore.currentUserRole);
+const showBookings = ref(false);
 
-// กรองเฉพาะการจองที่มีสถานะ Pending
-const pendingBookings = computed(() =>
-  bookingStore.bookings.filter((booking) => booking.status === "Pending")
+// กรองเฉพาะการจองที่มีสถานะ Pending ของ Admin
+const pendingBookings = computed(() => {
+  if (currentUserRole.value?.[0]?.role_name === "Admin") {
+    const filteredBookings = bookingStore.bookings.filter(
+      (booking) => booking.status === "Pending"
+    );
+    // console.log("Pending Bookings:", filteredBookings); // ตรวจสอบรายการที่กรองแล้ว
+    return filteredBookings;
+  }
+  return [];
+});
+
+// กรองเฉพาะการจองที่มีสถานะ Approved และ Cancel ของ User
+const statusUserBookings = computed(() => {
+  if (currentUserRole.value?.[0]?.role_name !== "Admin") {
+    return bookingStore.bookings.filter(
+      (booking) =>
+        booking.user_id === userId &&
+        (booking.status === "Approved" || booking.status === "Cancel")
+    );
+  }
+  return [];
+});
+
+// สำหรับจุดแดงกระดิ่ง Admin
+const hasPendingBookings = computed(() =>
+  currentUserRole.value?.[0]?.role_name === "Admin"
+    ? pendingBookings.value.length > 0
+    : false
 );
-
-// ตรวจสอบว่ามีการจองที่ Pending หรือไม่
-const hasPendingBookings = computed(() => pendingBookings.value.length > 0);
-const showBookings = ref(false); // ควบคุมการแสดง dropdown
+// สำหรับจุดแดงกระดิ่ง User
+const hasUserBookings = computed(() =>
+  currentUserRole.value?.[0]?.role_name !== "Admin"
+    ? statusUserBookings.value.length > 0
+    : false
+);
 
 function toggleBookings() {
   showBookings.value = !showBookings.value;
@@ -101,9 +134,16 @@ async function logout() {
   showMenu.value = false;
 }
 
-onMounted(() => {
+onMounted(async () => {
   document.addEventListener("click", handleClickBookingOutside);
   document.addEventListener("click", handleClickProfileOutside);
+
+  const userId = localStorage.getItem("user_id");
+
+  if (userId) {
+    await userRoleStore.getUserRoleById(userId);
+    await bookingStore.fetchBookings(); // โหลด booking ทุกกรณี
+  }
 });
 
 onUnmounted(() => {
@@ -119,7 +159,7 @@ onUnmounted(() => {
         <!-- กระดิ่ง -->
         <div class="bell" @click="toggleBookings">
           <i class="fas fa-bell"></i>
-          <span v-if="hasPendingBookings" class="notification-dot"></span>
+          <span v-if="hasPendingBookings || hasUserBookings" class="notification-dot"></span>
         </div>
 
         <div
@@ -127,7 +167,8 @@ onUnmounted(() => {
           class="bookings-dropdown"
           ref="bookingsDropdownRef"
         >
-          <ul>
+          <!-- Admin -->
+          <ul v-if="currentUserRole[0]?.role_name === 'Admin'">
             <router-link to="/admin/bookings" class="view-all-link">
               <li
                 v-for="(booking, index) in pendingBookings"
@@ -139,14 +180,43 @@ onUnmounted(() => {
                   จองโดย: {{ booking.user_name }} {{ booking.user_lastname }}
                 </p>
                 <p>
-                  {{ formatDate(booking.strat_time) }} ถึง
+                  {{ formatDate(booking.start_time) }} ถึง
                   {{ formatDate(booking.end_time) }}
                 </p>
                 <p>------------------------------</p>
               </li>
             </router-link>
           </ul>
+
+          <!-- User -->
+          <ul v-else>
+            <li
+              v-for="(booking, index) in statusUserBookings"
+              :key="index"
+              class="booking"
+            >
+              <p class="room_name">{{ booking.room_name }}</p>
+              <p
+                :class="{
+                  'text-green': booking.status === 'Approved',
+                  'text-red': booking.status === 'Cancel',
+                }"
+              >
+                {{
+                  booking.status === "Approved"
+                    ? "การจองของคุณได้รับการอนุมัติแล้ว"
+                    : "การจองของคุณถูกปฏิเสธ"
+                }}
+              </p>
+              <p>
+                {{ formatDate(booking.start_time)}} ถึง<br>
+                {{ formatDate(booking.end_time)}}
+              </p>
+              <p>------------------------------</p>
+            </li>
+          </ul>
         </div>
+
         <img
           :src="userProfileImage"
           alt="Profile"
@@ -322,7 +392,13 @@ onUnmounted(() => {
   color: #e0e0e0;
   font-weight: bold;
   display: block;
+}
 
+.text-green {
+  color: #04bd35;
+}
+.text-red {
+  color: #f44336;
 }
 
 .modal-overlay {
