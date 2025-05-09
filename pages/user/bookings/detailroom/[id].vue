@@ -2,15 +2,16 @@
 import { useRoute } from "vue-router";
 import { useRoomStore } from "@/store/roomStore";
 import { useBuilding_RoomStore } from "@/store/building_roomStore";
-import { ref, onMounted } from "vue";
-
+import { useUserStore } from "@/store/userStore"; // ✅ import userStore
+import { ref, onMounted, computed } from "vue";
 
 definePageMeta({
-  middleware: ["load-user"] // Corrected middleware name
+  middleware: ["load-user"]
 });
 
+const userStore = useUserStore(); // ✅ ใช้ก่อนสร้าง computed
+const userId = computed(() => userStore.user_id); // ✅ ใช้งานได้แล้ว
 
-const userId = computed(() => userStore.user_id); // ค่านี้จะ reactive และไม่หาย
 const route = useRoute();
 const roomId = route.params.id;
 const roomStore = useRoomStore();
@@ -18,16 +19,17 @@ const buildingRoomStore = useBuilding_RoomStore();
 const buildingRoom = ref(null);
 
 onMounted(async () => {
-    try {
-        console.log("✅ USER ID:", userId.value); // ตรวจสอบว่าได้จริง
-        await roomStore.getById(roomId);
-        buildingRoom.value = await buildingRoomStore.getByRoomId(roomId);
-    } catch (error) {
-        console.error("Error fetching room details:", error);
-    }
+  try {
+    console.log("✅ USER ID:", userId.value);
+    await roomStore.getById(roomId);
+    buildingRoom.value = await buildingRoomStore.getByRoomId(roomId);
+    console.log("🏠 Room Details:", buildingRoom.value);
+  } catch (error) {
+    console.error("Error fetching room details:", error);
+  }
 });
-
 </script>
+
 
 <template>
     <div class="room-details-container">

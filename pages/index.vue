@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, watch } from "vue";
 import FullCalendar from "@fullcalendar/vue3";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import interactionPlugin from "@fullcalendar/interaction";
@@ -7,26 +7,27 @@ import thLocale from "@fullcalendar/core/locales/th";
 import { useBookingStore } from "@/store/bookingStore";
 import dayjs from "dayjs";
 import "dayjs/locale/th";
+
 definePageMeta({
-  middleware: ["load-user"], // Corrected middleware name
+  middleware: ["load-user"],
 });
 
 const bookingStore = useBookingStore();
 const events = ref([]);
+const popupVisible = ref(false);
+const selectedEvent = ref(null);
+const searchDate = ref(null);
+const loading = ref(false);
+const loadedOnce = ref(false);
 
-// โหลดข้อมูล bookings
 const loadBookings = async () => {
+  if (loadedOnce.value) return; // ป้องกันโหลดซ้ำ
+  loading.value = true;
   await bookingStore.fetchBookings();
   events.value = bookingStore.bookings.map((booking) => {
-    let backgroundColor = "#04bd35"; // ค่าเริ่มต้นเป็นสีเขียวสำหรับ "Approved"
-
-    // เช็กสถานะ
-    if (booking.status === "Pending") {
-      backgroundColor = "#dbdb02"; // สีเหลืองสำหรับ "Pending"
-    }
-    if (booking.status === "Cancel") {
-      backgroundColor = "#f06666";
-    }
+    let backgroundColor = "#04bd35";
+    if (booking.status === "Pending") backgroundColor = "#dbdb02";
+    if (booking.status === "Cancel") backgroundColor = "#f06666";
 
     return {
       id: booking.id,
@@ -37,14 +38,24 @@ const loadBookings = async () => {
       first_name: booking.user_name || "ไม่ระบุชื่อ",
       last_name: booking.user_lastname || "ไม่ระบุนามสกุล",
       room: booking.room_name || "ไม่ระบุห้อง",
-      backgroundColor: backgroundColor, // ใช้สีตามสถานะ
-      borderColor: backgroundColor, // ใช้สีตามสถานะ
+      backgroundColor,
+      borderColor: backgroundColor,
       status: booking.status,
     };
   });
+  loadedOnce.value = true;
+  loading.value = false;
 };
 
-// ตั้งค่า FullCalendar
+// call loadBookings ทันทีเมื่อ component ถูกสร้าง
+watch(
+  () => true,
+  async () => {
+    await loadBookings();
+  },
+  { immediate: true }
+);
+
 const calendarOptions = computed(() => ({
   plugins: [dayGridPlugin, interactionPlugin],
   initialView: "dayGridMonth",
@@ -56,20 +67,15 @@ const calendarOptions = computed(() => ({
     center: "title",
     end: "",
   },
-  height: "auto", // เพื่อปรับขนาดหน้าจอปฏิทินอัตโนมัติ
-  contentHeight: "auto", // สำหรับเนื้อหาภายในที่ปรับขนาด
-
-  eventDidMount: function (info) {
-    info.el.style.cursor = "pointer"; // ให้เมาส์เป็นมือ
+  height: "auto",
+  contentHeight: "auto",
+  eventDidMount(info) {
+    info.el.style.cursor = "pointer";
     info.el.classList.add(
       `status-${info.event.extendedProps.status.toLowerCase()}`
     );
   },
 }));
-
-// Popup รายละเอียดเมื่อกดที่ event
-const popupVisible = ref(false);
-const selectedEvent = ref(null);
 
 function handleEventClick(info) {
   selectedEvent.value = info.event;
@@ -80,7 +86,6 @@ function closePopup() {
   popupVisible.value = false;
 }
 
-// ตารางการจองวันนี้
 const todayBookings = computed(() => {
   const today = dayjs().startOf("day");
   const tomorrow = today.add(1, "day");
@@ -90,7 +95,6 @@ const todayBookings = computed(() => {
   );
 });
 
-// ตารางรวมการจองทั้งหมด
 const dailyBookings = computed(() => {
   const grouped = {};
   events.value.forEach((event) => {
@@ -103,21 +107,14 @@ const dailyBookings = computed(() => {
   return grouped;
 });
 
-const searchDate = ref(null);
-
 function goToDate() {
   if (searchDate.value) {
-    const calendarApi = document
-      .querySelector(".fc")
-      .__vueParentComponent.ctx.getApi();
+    const calendarApi = document.querySelector(".fc").__vueParentComponent.ctx.getApi();
     calendarApi.gotoDate(searchDate.value);
   }
 }
-
-onMounted(() => {
-  loadBookings();
-});
 </script>
+
 
 <template>
   <div class="app-container">

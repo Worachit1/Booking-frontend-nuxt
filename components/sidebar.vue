@@ -118,12 +118,12 @@ onMounted(async () => {
               <!-- ชั้นสอง: รายการภายใต้ห้องนั้น -->
               <ul v-if="openRoomId === room.room_id" class="dropdown-sub-sub">
                 <li>
-                  <router-link :to="`/user/bookings/bookingroom/${room.room_id}`" class="dropdown-sub-item">
+                  <router-link :to="`/user/bookings/bookingroom/${room.room_id}`" class="dropdown-sub-item" style="font-size: 12px;">
                     📋 รายการจอง
                   </router-link>
                 </li>
                 <li>
-                  <router-link :to="`/user/bookings/detailroom/${room.room_id}`" class="dropdown-sub-item">
+                  <router-link :to="`/user/bookings/detailroom/${room.room_id}`" class="dropdown-sub-item" style="font-size: 12px;">
                     🛠 รายละเอียดห้อง
                   </router-link>
                 </li>
@@ -251,6 +251,8 @@ onMounted(async () => {
 .room-link {
   text-decoration: none;
   color: inherit;
+  font-size: 14px;
+  margin-right: 20px;
 }
 
 .sidebar {

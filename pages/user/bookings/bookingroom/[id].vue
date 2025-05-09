@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, watch } from "vue";
 import FullCalendar from "@fullcalendar/vue3";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import interactionPlugin from "@fullcalendar/interaction";
@@ -10,27 +10,33 @@ import { useRoute } from "vue-router";
 import dayjs from "dayjs";
 import "dayjs/locale/th";
 
-// รับ room_id จาก URL
+definePageMeta({
+  middleware: ["load-user"],
+});
+
 const route = useRoute();
-const roomId = route.params.id; // ดึง room_id จาก URL
+const roomId = ref(route.params.id); // ใช้ ref เพื่อให้ watch ได้
 const bookingStore = useBookingStore();
 const roomStore = useRoomStore();
 const events = ref([]);
-const roomName = ref(""); // เพิ่มตัวแปรสำหรับชื่อห้อง
+const roomName = ref("");
+const calendarRef = ref(null);
+const popupVisible = ref(false);
+const selectedEvent = ref(null);
+const searchDate = ref(null);
+const loading = ref(false);
+const loadedOnce = ref(false); // ✅ ป้องกันโหลดซ้ำ
 
-// ฟังก์ชันโหลดข้อมูลการจอง
 const loadBookings = async () => {
-  await bookingStore.fetchBookingByRoomId(roomId); // ดึงข้อมูลการจองจาก API ตาม room_id
-  events.value = bookingStore.bookings.map((booking) => {
-    let backgroundColor = "#04bd35"; // ค่าเริ่มต้นเป็นสีเขียวสำหรับ "Approved"
+  if (!roomId.value || loadedOnce.value) return;
+  loading.value = true;
 
-    // เช็กสถานะ
-    if (booking.status === "Pending") {
-      backgroundColor = "#dbdb02"; // สีเหลืองสำหรับ "Pending"
-    }
-    if (booking.status === "Cancel") {
-      backgroundColor = "#f06666"; 
-    }
+  await bookingStore.fetchBookingByRoomId(roomId.value);
+
+  events.value = bookingStore.bookings.map((booking) => {
+    let backgroundColor = "#04bd35";
+    if (booking.status === "Pending") backgroundColor = "#dbdb02";
+    if (booking.status === "Cancel") backgroundColor = "#f06666";
 
     return {
       id: booking.id,
@@ -41,22 +47,34 @@ const loadBookings = async () => {
       first_name: booking.user_name || "ไม่ระบุชื่อ",
       last_name: booking.user_lastname || "ไม่ระบุนามสกุล",
       room: booking.room_name || "ไม่ระบุห้อง",
-      backgroundColor: backgroundColor, // ใช้สีตามสถานะ
-      borderColor: backgroundColor, // ใช้สีตามสถานะ
+      backgroundColor,
+      borderColor: backgroundColor,
+      status: booking.status || "Unknown", 
     };
   });
 
-  // ดึงชื่อห้องจาก roomStore หากห้องนั้นมีการจอง
   if (bookingStore.bookings.length > 0) {
-    roomName.value = bookingStore.bookings[0].room_name; // กรณีมีการจอง
+    roomName.value = bookingStore.bookings[0].room_name;
   } else {
-    // ถ้าไม่มีการจองให้ดึงข้อมูลห้องจาก roomStore
-    const roomData = await roomStore.getById(roomId);
-    roomName.value = roomData ? roomData.name : "ไม่ระบุห้อง"; // ใช้ชื่อห้องจาก roomStore
+    const roomData = await roomStore.getById(roomId.value);
+    roomName.value = roomData ? roomData.name : "ไม่ระบุห้อง";
   }
+
+  loadedOnce.value = true;
+  loading.value = false;
 };
 
-// ตั้งค่า FullCalendar
+// ✅ ใช้ watch เพื่อรอให้ roomId พร้อม และโหลดครั้งเดียว
+watch(
+  roomId,
+  () => {
+    if (roomId.value && !loadedOnce.value) {
+      loadBookings();
+    }
+  },
+  { immediate: true }
+);
+
 const calendarOptions = computed(() => ({
   plugins: [dayGridPlugin, interactionPlugin],
   initialView: "dayGridMonth",
@@ -68,13 +86,16 @@ const calendarOptions = computed(() => ({
     center: "title",
     end: "",
   },
-  height: "auto", // เพื่อปรับขนาดหน้าจอปฏิทินอัตโนมัติ
-  contentHeight: "auto", // สำหรับเนื้อหาภายในที่ปรับขนาด
+  height: "auto",
+  contentHeight: "auto",
+  eventDidMount(info) {
+    info.el.style.cursor = "pointer";
+    const status = info.event.extendedProps.status;
+    if (status) {
+      info.el.classList.add(`status-${status.toLowerCase()}`);
+    }
+  },
 }));
-
-// Popup รายละเอียดเมื่อกดที่ event
-const popupVisible = ref(false);
-const selectedEvent = ref(null);
 
 function handleEventClick(info) {
   selectedEvent.value = info.event;
@@ -85,10 +106,15 @@ function closePopup() {
   popupVisible.value = false;
 }
 
-// วันปัจจุบัน
+function goToDate() {
+  if (searchDate.value && calendarRef.value) {
+    const calendarApi = calendarRef.value.getApi();
+    calendarApi.gotoDate(searchDate.value);
+  }
+}
+
 const todayDate = dayjs().format("DD/MM/YYYY");
 
-// ตารางการจองวันนี้
 const todayBookings = computed(() => {
   const today = dayjs().startOf("day");
   const tomorrow = today.add(1, "day");
@@ -98,7 +124,6 @@ const todayBookings = computed(() => {
   );
 });
 
-// ตารางรวมการจองทั้งหมด
 const dailyBookings = computed(() => {
   const grouped = {};
   events.value.forEach((event) => {
@@ -109,19 +134,6 @@ const dailyBookings = computed(() => {
     grouped[date].push(event);
   });
   return grouped;
-});
-
-const searchDate = ref(null);
-
-function goToDate() {
-  if (searchDate.value) {
-    const calendarApi = document.querySelector(".fc").__vueParentComponent.ctx.getApi();
-    calendarApi.gotoDate(searchDate.value);
-  }
-}
-
-onMounted(() => {
-  loadBookings(); // โหลดข้อมูลการจองเมื่อหน้าเพจโหลด
 });
 </script>
 
@@ -140,7 +152,9 @@ onMounted(() => {
         <div class="calendar-container">
           <FullCalendar :options="calendarOptions" />
           <div class="calendar-footer">
-            <a class="booking-button" href="/user/bookings/createBooking">จองห้อง</a>
+            <a class="booking-button" href="/user/bookings/createBooking"
+              >จองห้อง</a
+            >
           </div>
         </div>
       </div>
@@ -149,9 +163,18 @@ onMounted(() => {
       <div class="right-content">
         <!-- 📌 ตารางการจองวันนี้ -->
         <div class="today-bookings">
-          <h2>📌 ตารางการจองวันนี้ ({{ dayjs().locale('th').format('D MMMM YYYY') }})</h2>
+          <h2>
+            📌 ตารางการจองวันนี้ ({{
+              dayjs().locale("th").format("D MMMM YYYY")
+            }})
+          </h2>
           <div v-if="todayBookings.length > 0">
-            <table border="1" cellpadding="8" cellspacing="0" style="width: 100%; margin-bottom: 20px;">
+            <table
+              border="1"
+              cellpadding="8"
+              cellspacing="0"
+              style="width: 100%; margin-bottom: 20px"
+            >
               <thead>
                 <tr class="header-row">
                   <th>หัวข้อ</th>
@@ -182,9 +205,7 @@ onMounted(() => {
             </table>
           </div>
 
-          <div v-else class="no-bookings">
-            ไม่มีการจองในวันนี้
-          </div>
+          <div v-else class="no-bookings">ไม่มีการจองในวันนี้</div>
         </div>
 
         <!-- 📋 ตารางรวมการจองทั้งหมด -->
@@ -193,10 +214,15 @@ onMounted(() => {
           <div v-if="Object.keys(dailyBookings).length > 0">
             <div v-for="(events, date) in dailyBookings" :key="date">
               <h3 class="date-header">
-                {{ dayjs(date).locale('th').format('D MMMM YYYY') }}
+                {{ dayjs(date).locale("th").format("D MMMM YYYY") }}
               </h3>
 
-              <table border="1" cellpadding="8" cellspacing="0" style="width: 100%; margin-bottom: 20px;">
+              <table
+                border="1"
+                cellpadding="8"
+                cellspacing="0"
+                style="width: 100%; margin-bottom: 20px"
+              >
                 <thead>
                   <tr class="header-row">
                     <th>หัวข้อ</th>
@@ -227,9 +253,7 @@ onMounted(() => {
               </table>
             </div>
           </div>
-          <div v-else class="no-bookings">
-            ไม่มีข้อมูลการจอง
-          </div>
+          <div v-else class="no-bookings">ไม่มีข้อมูลการจอง</div>
         </div>
       </div>
     </div>
@@ -253,7 +277,8 @@ onMounted(() => {
           </p>
           <p>
             🙋‍♂️<strong>ผู้จอง:</strong>
-            {{ selectedEvent?.extendedProps?.first_name }} {{ selectedEvent?.extendedProps?.last_name }}
+            {{ selectedEvent?.extendedProps?.first_name }}
+            {{ selectedEvent?.extendedProps?.last_name }}
           </p>
           <p>
             🏠<strong>ห้องที่จอง:</strong>
@@ -267,8 +292,6 @@ onMounted(() => {
     </div>
   </div>
 </template>
-
-
 
 <style scoped>
 .app-container {
@@ -295,7 +318,7 @@ onMounted(() => {
 }
 
 .header {
-  font-size: 2.0rem;
+  font-size: 2rem;
   font-weight: bold;
   margin-bottom: 16px;
   margin-left: 5px;
@@ -313,14 +336,12 @@ onMounted(() => {
   overflow: hidden;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
   padding-bottom: 10px;
-  
 }
 
 .calendar-footer {
   margin-top: 16px;
   display: flex;
   justify-content: flex-end;
-  
 }
 
 .input {
@@ -449,9 +470,8 @@ onMounted(() => {
   background-color: #388e3c;
 }
 
-
 .fc {
-  background-color: #FFFBFB;
+  background-color: #fffbfb;
   /* สีพื้นหลังของปฏิทิน */
   border-radius: 8px;
   /* มุมมน */
@@ -486,21 +506,33 @@ onMounted(() => {
   border-radius: 4px;
 }
 
+/* hover ของstatus ที่ขึ้นในหน้าปฏิทิน */
+::v-deep(.status-pending:hover) {
+  background-color: #f0e68c !important;
+}
+
+::v-deep(.status-approved:hover) {
+  background-color: #90ee90 !important;
+}
+
+::v-deep(.status-cancel:hover) {
+  background-color: #f08080 !important;
+}
+
 ::v-deep(.fc-button-group) {
-  gap: .5em;
+  gap: 0.5em;
 }
 
 ::v-deep(.fc-prev-button),
 ::v-deep(.fc-next-button) {
-  border-radius: 50% !important
+  border-radius: 50% !important;
 }
 ::v-deep(.fc-prev-button):hover,
 ::v-deep(.fc-next-button):hover {
   background-color: #5a5959 !important;
-
 }
 
 ::v-deep(.fc-button) {
-  background-color: #13131f !important
+  background-color: #13131f !important;
 }
 </style>
