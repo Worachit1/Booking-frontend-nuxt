@@ -15,7 +15,7 @@ const buildingRoom = ref(null);
 
 onMounted(async () => {
     try {
-        await roomStore.getById(roomId); // Fetch all rooms
+        await roomStore.getById(roomId); 
         // Fetch building room details
         console.log("Fetching room details for ID:", roomId);
         buildingRoom.value = await buildingRoomStore.getByRoomId(roomId);
@@ -57,7 +57,6 @@ onMounted(async () => {
     max-width: 800px;
     margin: 0 auto;
     padding: 20px;
-    font-family: sans-serif;
 }
 
 .header-row {

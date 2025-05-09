@@ -8,7 +8,7 @@ import { useBookingStore } from "@/store/bookingStore";
 import dayjs from "dayjs";
 import "dayjs/locale/th";
 definePageMeta({
-  middleware: ["load-user"] // Corrected middleware name
+  middleware: ["load-user"], // Corrected middleware name
 });
 
 const bookingStore = useBookingStore();
@@ -25,7 +25,7 @@ const loadBookings = async () => {
       backgroundColor = "#dbdb02"; // สีเหลืองสำหรับ "Pending"
     }
     if (booking.status === "Cancel") {
-      backgroundColor = "#f06666"; 
+      backgroundColor = "#f06666";
     }
 
     return {
@@ -44,7 +44,6 @@ const loadBookings = async () => {
   });
 };
 
-
 // ตั้งค่า FullCalendar
 const calendarOptions = computed(() => ({
   plugins: [dayGridPlugin, interactionPlugin],
@@ -62,8 +61,10 @@ const calendarOptions = computed(() => ({
 
   eventDidMount: function (info) {
     info.el.style.cursor = "pointer"; // ให้เมาส์เป็นมือ
-    info.el.classList.add(`status-${info.event.extendedProps.status.toLowerCase()}`);
-  }
+    info.el.classList.add(
+      `status-${info.event.extendedProps.status.toLowerCase()}`
+    );
+  },
 }));
 
 // Popup รายละเอียดเมื่อกดที่ event
@@ -106,7 +107,9 @@ const searchDate = ref(null);
 
 function goToDate() {
   if (searchDate.value) {
-    const calendarApi = document.querySelector(".fc").__vueParentComponent.ctx.getApi();
+    const calendarApi = document
+      .querySelector(".fc")
+      .__vueParentComponent.ctx.getApi();
     calendarApi.gotoDate(searchDate.value);
   }
 }
@@ -132,9 +135,11 @@ onMounted(() => {
               <button @click="goToDate" class="search-button">ค้นหา</button>
             </div>
           </div>
-          <FullCalendar :options="calendarOptions"/>
+          <FullCalendar :options="calendarOptions" />
           <div class="calendar-footer">
-            <a class="booking-button" href="/user/bookings/createBooking">จองห้อง</a>
+            <a class="booking-button" href="/user/bookings/createBooking"
+              >จองห้อง</a
+            >
           </div>
         </div>
       </div>
@@ -143,10 +148,19 @@ onMounted(() => {
       <div class="right-content">
         <!-- 📌 ตารางการจองวันนี้ -->
         <div class="today-bookings">
-          <h2>📌 ตารางการจองวันนี้ ({{ dayjs().locale('th').format('D MMMM YYYY') }})</h2>
+          <h2>
+            📌 ตารางการจองวันนี้ ({{
+              dayjs().locale("th").format("D MMMM YYYY")
+            }})
+          </h2>
 
           <div v-if="todayBookings.length > 0">
-            <table border="1" cellpadding="8" cellspacing="0" style="width: 100%; margin-bottom: 20px;">
+            <table
+              border="1"
+              cellpadding="8"
+              cellspacing="0"
+              style="width: 100%; margin-bottom: 20px"
+            >
               <thead>
                 <tr class="header-row">
                   <th>หัวข้อ</th>
@@ -162,8 +176,14 @@ onMounted(() => {
                 <tr v-for="(event, index) in todayBookings" :key="index">
                   <td>{{ event.title }}</td>
                   <td>{{ event.description }}</td>
-                  <td>{{ dayjs(event.start).format("DD/MM/YYYY HH:mm") }} น.</td>
-                  <td>{{ dayjs(event.end).format("DD/MM/YYYY HH:mm") }} น.</td>
+                  <td>
+                    {{ dayjs(event.start).format("DD/MM/YYYY") }}<br />
+                    เวลา {{ dayjs(event.start).format("HH:mm") }} น.
+                  </td>
+                  <td>
+                    {{ dayjs(event.end).format("DD/MM/YYYY") }}<br />
+                    เวลา {{ dayjs(event.end).format("HH:mm") }} น.
+                  </td>
                   <td>{{ event.first_name }} {{ event.last_name }}</td>
                   <td>{{ event.room }}</td>
                 </tr>
@@ -171,11 +191,8 @@ onMounted(() => {
             </table>
           </div>
 
-          <div v-else class="no-bookings">
-            ไม่มีการจองในวันนี้
-          </div>
+          <div v-else class="no-bookings">ไม่มีการจองในวันนี้</div>
         </div>
-
 
         <!-- 📋 ตารางรวมการจองทั้งหมด -->
         <div class="all-bookings">
@@ -183,10 +200,15 @@ onMounted(() => {
           <div v-if="Object.keys(dailyBookings).length > 0">
             <div v-for="(events, date) in dailyBookings" :key="date">
               <h3 class="date-header">
-                {{ dayjs(date).locale('th').format('D MMMM YYYY') }}
+                {{ dayjs(date).locale("th").format("D MMMM YYYY") }}
               </h3>
 
-              <table border="1" cellpadding="8" cellspacing="0" style="width: 100%; margin-bottom: 20px;">
+              <table
+                border="1"
+                cellpadding="8"
+                cellspacing="0"
+                style="width: 100%; margin-bottom: 20px"
+              >
                 <thead>
                   <tr class="header-row">
                     <th>หัวข้อ</th>
@@ -202,8 +224,14 @@ onMounted(() => {
                   <tr v-for="(event, index) in events" :key="index">
                     <td>{{ event.title }}</td>
                     <td>{{ event.description }}</td>
-                    <td>{{ dayjs(event.start).format("DD/MM/YYYY HH:mm") }} น.</td>
-                    <td>{{ dayjs(event.end).format("DD/MM/YYYY HH:mm") }} น.</td>
+                    <td>
+                      {{ dayjs(event.start).format("DD/MM/YYYY") }}<br />
+                      เวลา {{ dayjs(event.start).format("HH:mm") }} น.
+                    </td>
+                    <td>
+                      {{ dayjs(event.end).format("DD/MM/YYYY") }}<br />
+                      เวลา {{ dayjs(event.end).format("HH:mm") }} น.
+                    </td>
                     <td>{{ event.first_name }} {{ event.last_name }}</td>
                     <td>{{ event.room }}</td>
                   </tr>
@@ -211,10 +239,7 @@ onMounted(() => {
               </table>
             </div>
           </div>
-          <div v-else class="no-bookings">
-            ไม่มีข้อมูลการจอง
-          </div>
-
+          <div v-else class="no-bookings">ไม่มีข้อมูลการจอง</div>
         </div>
       </div>
     </div>
@@ -238,7 +263,8 @@ onMounted(() => {
           </p>
           <p>
             🙋‍♂️<strong>ผู้จอง:</strong>
-            {{ selectedEvent?.extendedProps?.first_name }} {{ selectedEvent?.extendedProps?.last_name }}
+            {{ selectedEvent?.extendedProps?.first_name }}
+            {{ selectedEvent?.extendedProps?.last_name }}
           </p>
           <p>
             🏠<strong>ห้องที่จอง:</strong>
@@ -278,10 +304,10 @@ onMounted(() => {
 }
 
 .header {
-  font-size: 2.0rem;
+  font-size: 30px;
   font-weight: bold;
   margin-bottom: 16px;
-  margin-left: 5px;
+  margin-left: 15px;
 }
 
 .sub-header {
@@ -296,14 +322,12 @@ onMounted(() => {
   overflow: hidden;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
   padding-bottom: 10px;
-  
 }
 
 .calendar-footer {
   margin-top: 16px;
   display: flex;
   justify-content: flex-end;
-  
 }
 
 .input {
@@ -401,6 +425,8 @@ onMounted(() => {
   padding: 10px;
   margin-bottom: 20px;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  font-size: 10px;
+  width: 100%;
 }
 
 .all-bookings {
@@ -409,6 +435,8 @@ onMounted(() => {
   padding: 10px;
   margin-bottom: 20px;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  font-size: 10px;
+  width: 100%;
 }
 
 .booking-button {
@@ -428,9 +456,8 @@ onMounted(() => {
   background-color: #388e3c;
 }
 
-
 .fc {
-  background-color: #FFFBFB;
+  background-color: #fffbfb;
   /* สีพื้นหลังของปฏิทิน */
   border-radius: 8px;
   /* มุมมน */
@@ -475,24 +502,23 @@ onMounted(() => {
 }
 
 ::v-deep(.status-cancel:hover) {
-  background-color: #f08080 !important; 
+  background-color: #f08080 !important;
 }
 
 ::v-deep(.fc-button-group) {
-  gap: .5em;
+  gap: 0.5em;
 }
 
 ::v-deep(.fc-prev-button),
 ::v-deep(.fc-next-button) {
-  border-radius: 50% !important
+  border-radius: 50% !important;
 }
 ::v-deep(.fc-prev-button):hover,
 ::v-deep(.fc-next-button):hover {
   background-color: #5a5959 !important;
-
 }
 
 ::v-deep(.fc-button) {
-  background-color: #13131f !important
+  background-color: #13131f !important;
 }
 </style>

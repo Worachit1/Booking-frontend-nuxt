@@ -45,6 +45,8 @@ export const useRoomStore = defineStore("room", {
         },
         async addRoom(newRoom: Room) {
             try {
+                const token = localStorage.getItem("token");
+                const headers = token ? { Authorization: `Bearer ${token}` } : {};
                 const formData = new FormData();
                 formData.append("name", newRoom.name);
                 formData.append("description", newRoom.description);
@@ -64,6 +66,7 @@ export const useRoomStore = defineStore("room", {
                     {
                         headers: {
                             "Content-Type": "multipart/form-data",
+                            ...headers,
                         },
                     }
                 );
@@ -83,7 +86,15 @@ export const useRoomStore = defineStore("room", {
 
         async updateRoom(id: string, updatedRoom: { name: string; buildingId: string; }) {
             try {
-                const response = await axios.patch(`${config.public.apiBase}/api/v1/rooms/${id}`, updatedRoom);
+                const token = localStorage.getItem("token");
+                const headers = token ? { Authorization: `Bearer ${token}` } : {};
+                const response = await axios.patch(`${config.public.apiBase}/api/v1/rooms/${id}`, updatedRoom, {
+                    headers: {
+                        "Content-Type": "application/json",
+                        ...headers,
+                    },
+                }
+                );
                 if (response.status === 200) {
                     console.log("Room updated successfully:", response.data.data);
                 } else {
@@ -96,7 +107,13 @@ export const useRoomStore = defineStore("room", {
 
         async deleteRoom(id: string) {
             try {
-                const response = await axios.delete(`${config.public.apiBase}/api/v1/rooms/${id}`);
+                const token = localStorage.getItem("token");
+                const headers = token ? { Authorization: `Bearer ${token}` } : {};
+                const response = await axios.delete(`${config.public.apiBase}/api/v1/rooms/${id}`, {
+                    headers: {
+                        ...headers,
+                    },
+                });
                 if (response.status === 200) {
                     console.log("Room deleted successfully:", response.data.data);
                 } else {

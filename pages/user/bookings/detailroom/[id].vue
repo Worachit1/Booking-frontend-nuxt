@@ -3,11 +3,14 @@ import { useRoute } from "vue-router";
 import { useRoomStore } from "@/store/roomStore";
 import { useBuilding_RoomStore } from "@/store/building_roomStore";
 import { ref, onMounted } from "vue";
+
+
 definePageMeta({
   middleware: ["load-user"] // Corrected middleware name
 });
 
 
+const userId = computed(() => userStore.user_id); // ค่านี้จะ reactive และไม่หาย
 const route = useRoute();
 const roomId = route.params.id;
 const roomStore = useRoomStore();
@@ -16,14 +19,14 @@ const buildingRoom = ref(null);
 
 onMounted(async () => {
     try {
-        await roomStore.getById(roomId); // Fetch all rooms
-        // Fetch building room details
-        console.log("Fetching room details for ID:", roomId);
+        console.log("✅ USER ID:", userId.value); // ตรวจสอบว่าได้จริง
+        await roomStore.getById(roomId);
         buildingRoom.value = await buildingRoomStore.getByRoomId(roomId);
     } catch (error) {
         console.error("Error fetching room details:", error);
     }
 });
+
 </script>
 
 <template>
@@ -60,7 +63,6 @@ onMounted(async () => {
     max-width: 800px;
     margin: 0 auto;
     padding: 20px;
-    font-family: sans-serif;
 }
 
 .header-row {

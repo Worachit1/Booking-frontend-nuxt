@@ -6,6 +6,7 @@ export const useBuilding_RoomStore = defineStore("building_room", {
   state: () => ({
     building_rooms: [], 
   }),
+
   actions: {
     async fetchBuilding_Rooms() {
       try {
@@ -21,8 +22,12 @@ export const useBuilding_RoomStore = defineStore("building_room", {
       }
     },
     async getByRoomId(room_id: string) {
+      const token = localStorage.getItem("token") || null;
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
       try {
-        const response = await axios.get(`${config.public.apiBase}/api/v1/buildingRooms/room/${room_id}`);
+        const response = await axios.get(`${config.public.apiBase}/api/v1/buildingRooms/room/${room_id}`, {
+          headers,
+        });
         if (response.status === 200) {
           return response.data.data; 
         } else {
@@ -46,10 +51,16 @@ export const useBuilding_RoomStore = defineStore("building_room", {
       }
     },
     async addBuilding_Room(newBuilding_Room: {building_id: string; room_id: string; }) {
+      
       try {
-        const response = await axios.post(`${config.public.apiBase}/api/v1/buildingRooms/create`, newBuilding_Room);
+        const token = localStorage.getItem("token");
+        const headers = token ? { Authorization: `Bearer ${token}` } : {};
+
+        const response = await axios.post(`${config.public.apiBase}/api/v1/buildingRooms/create`, newBuilding_Room,{
+            headers,
+          });
         if (response.status === 200) {
-          console.log("BuildingRoom added successfully:", response.data.data);
+          console.log("Building_Room added successfully:", response.data.data);
         } else {
           console.error("Error adding building:", response.statusText);
         }

@@ -2,16 +2,12 @@
 import { useUserStore } from "@/store/userStore";
 import { useUserRoleStore } from "@/store/userRoleStore";
 
-import { useRoute, useRouter } from 'vue-router';
-
 export default defineNuxtRouteMiddleware(async (to, from) => {
   const userStore = useUserStore();
   const userRoleStore = useUserRoleStore();
 
-  const userId =
-    Array.isArray(to.params.id)
-      ? to.params.id[0]
-      : to.params.id || localStorage.getItem("user_id");
+
+      const userId = localStorage.getItem("user_id");
 
   if (!userId) {
     console.warn("⚠️ ไม่พบ user_id — redirect ไปหน้า /");

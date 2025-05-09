@@ -10,7 +10,11 @@ export const useUserPositionStore = defineStore("userPosition", {
     actions: {
         async fetchUserPositions() {
             try {
-                const response = await axios.get(`${config.public.apiBase}/api/v1/positions/list`);
+                const token = localStorage.getItem("token");
+                const headers = token ? { Authorization: `Bearer ${token}` } : {};
+                const response = await axios.get(`${config.public.apiBase}/api/v1/positions/list`, {
+                    headers,
+                });
                 if (response.status === 200) {
                     this.userPositions = response.data.data;
                     console.log("User positions fetched successfully:", this.userPositions);

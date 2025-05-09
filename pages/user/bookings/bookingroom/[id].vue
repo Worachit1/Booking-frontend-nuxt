@@ -167,8 +167,14 @@ onMounted(() => {
                 <tr v-for="(event, index) in todayBookings" :key="index">
                   <td>{{ event.title }}</td>
                   <td>{{ event.description }}</td>
-                  <td>{{ dayjs(event.start).format("DD/MM/YYYY HH:mm") }} น.</td>
-                  <td>{{ dayjs(event.end).format("DD/MM/YYYY HH:mm") }} น.</td>
+                  <td>
+                    {{ dayjs(event.start).format("DD/MM/YYYY") }}<br />
+                    เวลา {{ dayjs(event.start).format("HH:mm") }} น.
+                  </td>
+                  <td>
+                    {{ dayjs(event.end).format("DD/MM/YYYY") }}<br />
+                    เวลา {{ dayjs(event.end).format("HH:mm") }} น.
+                  </td>
                   <td>{{ event.first_name }} {{ event.last_name }}</td>
                   <td>{{ event.room }}</td>
                 </tr>
@@ -206,8 +212,14 @@ onMounted(() => {
                   <tr v-for="(event, index) in events" :key="index">
                     <td>{{ event.title }}</td>
                     <td>{{ event.description }}</td>
-                    <td>{{ dayjs(event.start).format("DD/MM/YYYY HH:mm") }} น.</td>
-                    <td>{{ dayjs(event.end).format("DD/MM/YYYY HH:mm") }} น.</td>
+                    <td>
+                      {{ dayjs(event.start).format("DD/MM/YYYY") }}<br />
+                      เวลา {{ dayjs(event.start).format("HH:mm") }} น.
+                    </td>
+                    <td>
+                      {{ dayjs(event.end).format("DD/MM/YYYY") }}<br />
+                      เวลา {{ dayjs(event.end).format("HH:mm") }} น.
+                    </td>
                     <td>{{ event.first_name }} {{ event.last_name }}</td>
                     <td>{{ event.room }}</td>
                   </tr>
@@ -406,6 +418,8 @@ onMounted(() => {
   padding: 10px;
   margin-bottom: 20px;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  font-size: 10px;
+  width: 100%;
 }
 
 .all-bookings {
@@ -414,6 +428,8 @@ onMounted(() => {
   padding: 10px;
   margin-bottom: 20px;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  font-size: 10px;
+  width: 100%;
 }
 
 .booking-button {
