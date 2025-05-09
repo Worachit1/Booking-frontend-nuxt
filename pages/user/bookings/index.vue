@@ -276,6 +276,7 @@ onMounted(() => {
 
 .search-button:hover {
   background-color: #45a049;
+  transition: background-color 0.3s ease;
 }
 
 .popup-wrapper {
@@ -327,6 +328,7 @@ onMounted(() => {
 
 .popup-footer button:hover {
   background-color: #45a049;
+  transition: background-color 0.3s ease;
 }
 
 @keyframes fadeIn {

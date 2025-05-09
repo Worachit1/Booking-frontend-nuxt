@@ -244,6 +244,7 @@ button {
 .register-btn:hover {
     background-color: #4caf50;
     color: white;
+    transition: background-color 0.3s ease;
 }
 
 .close-btn {
@@ -260,6 +261,7 @@ button {
 .close-btn:hover {
     background-color: #f44336;
     color: white;
+    transition: background-color 0.3s ease;
 }
 
 .error-message {

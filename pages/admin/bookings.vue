@@ -140,6 +140,7 @@ th {
 
 tr:hover {
     background-color: #f1f1f1;
+    transition: background-color 0.3s ease;
 }
 button {
     padding: 5px 10px;
@@ -155,6 +156,7 @@ button {
 }
 .btn-pending:hover {
     background-color: #d8ba6f;
+    transition: background-color 0.3s ease;
 }
 
 .btn-approved {
@@ -163,6 +165,7 @@ button {
 }
 .btn-approved:hover {
     background-color: #5bcf6b;
+    transition: background-color 0.3s ease;
 }
 
 .btn-cancel {
@@ -171,6 +174,7 @@ button {
 }
 .btn-cancel:hover {
     background-color: #d9534f;
+    transition: background-color 0.3s ease;
 }
 
 .modal {
@@ -203,6 +207,7 @@ button {
 }
 .btn-close:hover {
     background-color: #d8ba6f;
+    transition: background-color 0.3s ease;
 }
 
 </style>

@@ -213,7 +213,7 @@ const handleCancel = () => {
         </div>
       </div>
 
-      <button type="submit" class="create">สร้างการจอง</button>
+      <button type="submit" class="create"><i class="fa-solid fa-circle-plus mr-2"></i> สร้างการจอง</button>
 
       <!-- Modal -->
       <div v-if="showMoadal" class="modal-overlay">

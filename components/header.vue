@@ -7,7 +7,7 @@ import { useBookingStore } from "~/store/bookingStore";
 import loginmodal from "@/components/loginModal.vue";
 import registerModal from "@/components/registerModal.vue";
 
-import { useRoute } from "vue-router";
+import { useRouter} from "vue-router";
 
 import dayjs from "dayjs";
 import "dayjs/locale/th";
@@ -17,7 +17,7 @@ const formatDate = (date) => {
   return dayjs(date).locale("th").format("D MMMM YYYY เวลา HH:mm น.");
 };
 
-// const route = useRoute();
+const router = useRouter();
 const userStore = useUserStore();
 const authStore = useAuthStore();
 const bookingStore = useBookingStore();
@@ -122,6 +122,11 @@ function openLoginModal() {
 }
 function openRegisterModal() {
   isModalOpenRegister.value = true; // เปิด modal register
+}
+
+function viewProfile() {
+  closeMenu();
+  router.push({ name: 'user-profile-id', params: { id: userId } });
 }
 
 async function logout() {
@@ -233,12 +238,12 @@ onUnmounted(() => {
       <div v-if="showMenu" class="dropdown-menu">
         <ul>
           <template v-if="isLoggedIn">
-            <li @click="viewProfile">ดูโปรไฟล์</li>
-            <li @click="logout">ออกจากระบบ</li>
+            <li @click="viewProfile"><i class="fa-solid fa-address-card mr-2"></i> ดูโปรไฟล์</li>
+            <li @click="logout"><i class="fa-solid fa-right-from-bracket mr-2"></i> ออกจากระบบ</li>
           </template>
           <template v-else>
-            <li @click="openLoginModal">เข้าสู่ระบบ</li>
-            <li @click="openRegisterModal">สมัครสมาชิก</li>
+            <li @click="openLoginModal"><i class="fa-solid fa-user mr-2"></i> เข้าสู่ระบบ</li>
+            <li @click="openRegisterModal"><i class="fa-solid fa-user-plus mr-2"></i> สมัครสมาชิก</li>
           </template>
         </ul>
       </div>

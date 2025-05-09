@@ -210,6 +210,7 @@ button {
 
 button:hover {
   background-color: #5ef684;
+  transition: background-color 0.3s ease;
 }
 
 .error-message {

@@ -206,6 +206,7 @@ button {
 
 .upload-button:hover {
   background-color: #2563eb;
+  transition: background-color 0.3s ease;
 }
 
 .image-preview {
@@ -281,6 +282,7 @@ button {
 
 .upload-button:hover {
   background-color: #2563eb;
+  transition: background-color 0.3s ease;
 }
 
 .room-and-building {
@@ -328,6 +330,7 @@ button {
 }
 .create-room:hover {
   background-color: #388e3c;
+  transition: background-color 0.3s ease;
 }
 
 .form-right {

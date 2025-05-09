@@ -3,6 +3,7 @@ import { ref, onMounted } from "vue";
 import { useRoomStore } from "@/store/roomStore";
 import { useBuildingStore } from "@/store/buildingStore";
 import { useRouter } from "vue-router";
+import { useBookingStore } from "~/store/bookingStore";
 
 
 const router = useRouter();
@@ -10,7 +11,7 @@ definePageMeta({
   middleware: ["load-user"] // Corrected middleware name
 });
 
-
+const bookingStore = useBookingStore();
 const roomStore = useRoomStore();
 const buildingStore = useBuildingStore();
 
@@ -32,6 +33,19 @@ const fetchBuildings = async () => {
 
 const handleDeleteRoom = async (roomId) => {
   try {
+    // ตรวจสอบว่าห้องนี้มีการจองอยู่หรือไม่
+    const roomBookings = bookingStore.bookings.filter(
+      (booking) => booking.room_id === roomId
+    );
+
+    if (roomBookings.length > 0) {
+      alert("ไม่สามารถลบห้องนี้ได้ เนื่องจากมีการจองอยู่");
+      return;
+    }
+
+    const confirmDelete = confirm("คุณแน่ใจว่าต้องการลบห้องนี้?");
+    if (!confirmDelete) return;
+
     await roomStore.deleteRoom(roomId);
     alert("ลบห้องเรียบร้อยแล้ว");
     await fetchRooms();
@@ -61,12 +75,7 @@ onMounted(async () => {
       <div class="col-md-12">
         <div class="header-actions">
           <button class="btn-create" @click="router.push('/admin/rooms/createRoom')">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-              stroke="currentColor" class="svg-icon" width="20px" height="20px">
-              <path stroke-linecap="round" stroke-linejoin="round"
-                d="M12 9v6m3-3H9m12 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
-            </svg>
-            เพิ่มห้อง
+            <i class="fa-solid fa-circle-plus mr-2"></i> เพิ่มห้อง
           </button>
         </div>
         <table class="table table-bordered table-striped" v-if="rooms.length">
@@ -88,7 +97,8 @@ onMounted(async () => {
               <td>{{ room.capacity }}</td>
               <td>{{ room.description }}</td>
               <td>
-                <button class="btn-edit" @click="goTodetail(room.id)">ดูข้อมูล</button>
+                <button class="btn-edit" @click="goTodetail(room.id)"><i class="fa-solid fa-info mr-2"></i> ดูข้อมูล</button>
+                <button class="btn-cancel" @click="handleDeleteRoom(room.id)"><i class="fa-solid fa-trash-can mr-2"></i> ลบ</button>
               </td>
             </tr>
           </tbody>
@@ -122,6 +132,7 @@ th {
 
 tr:hover {
   background-color: #f1f1f1;
+  transition: background-color 0.3s ease;
 }
 
 img {
@@ -162,22 +173,32 @@ button {
 
 .btn-create:hover {
   background-color: #4cae4c;
+  transition: background-color 0.3s ease;
 }
 
 .btn-edit {
   background-color: #5bc0de;
+  color: white;
+  border: none;
+  padding: 7px 15px;
 }
 
 .btn-edit:hover {
   background-color: #31b0d5;
+  transition: background-color 0.3s ease;
 }
 
 .btn-cancel {
   background-color: #f06666;
+  color: white;
+  border: none;
+  padding: 7px 15px;
+  margin-left: 10px;
 }
 
 .btn-cancel:hover {
   background-color: #d9534f;
+  transition: background-color 0.3s ease;
 }
 
 .btn-close {
@@ -186,6 +207,7 @@ button {
 
 .btn-close:hover {
   background-color: #d8ba6f;
+  transition: background-color 0.3s ease;
 }
 
 .modal {

@@ -129,13 +129,13 @@ function goToDate() {
             <!-- 🔍 ค้นหาวันที่ -->
             <div class="calendar-search">
               <input type="date" v-model="searchDate" class="date-input" />
-              <button @click="goToDate" class="search-button">ค้นหา</button>
+              <button @click="goToDate" class="search-button"><i class="fa-solid fa-magnifying-glass mr-2"></i> ค้นหา</button>
             </div>
           </div>
           <FullCalendar :options="calendarOptions" />
           <div class="calendar-footer">
             <a class="booking-button" href="/user/bookings/createBooking"
-              >จองห้อง</a
+              ><i class="fa-solid fa-circle-plus mr-2"></i> จองห้อง</a
             >
           </div>
         </div>
@@ -341,10 +341,12 @@ function goToDate() {
   border-radius: 4px;
   cursor: pointer;
   margin-left: 10px;
+  transition: background-color 0.3s ease;
 }
 
 .search-button:hover {
-  background-color: #45a049;
+  background-color: #388e3c;
+  transition: background-color 0.3s ease;
 }
 
 .popup-wrapper {
@@ -386,7 +388,7 @@ function goToDate() {
 }
 
 .popup-footer button {
-  background-color: #4caf50;
+  background-color: #dbdb02;
   color: white;
   padding: 10px 20px;
   border: none;
@@ -395,7 +397,8 @@ function goToDate() {
 }
 
 .popup-footer button:hover {
-  background-color: #45a049;
+  background-color: #f0e68c;
+  transition: background-color 0.3s ease;
 }
 
 @keyframes fadeIn {
@@ -451,6 +454,7 @@ function goToDate() {
 
 .booking-button:hover {
   background-color: #388e3c;
+  transition: background-color 0.3s ease;
 }
 
 .fc {
@@ -492,14 +496,17 @@ function goToDate() {
 /* hover ของstatus ที่ขึ้นในหน้าปฏิทิน */
 ::v-deep(.status-pending:hover) {
   background-color: #f0e68c !important;
+  transition: background-color 0.3s ease;
 }
 
 ::v-deep(.status-approved:hover) {
   background-color: #90ee90 !important;
+  transition: background-color 0.3s ease;
 }
 
 ::v-deep(.status-cancel:hover) {
   background-color: #f08080 !important;
+  transition: background-color 0.3s ease;
 }
 
 ::v-deep(.fc-button-group) {
@@ -513,6 +520,7 @@ function goToDate() {
 ::v-deep(.fc-prev-button):hover,
 ::v-deep(.fc-next-button):hover {
   background-color: #5a5959 !important;
+  transition: background-color 0.3s ease;
 }
 
 ::v-deep(.fc-button) {

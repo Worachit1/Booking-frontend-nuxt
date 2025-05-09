@@ -43,16 +43,11 @@ onMounted(async () => {
   <div v-if="user" class="profile-container">
     <!-- กล่องซ้าย -->
     <div class="profile-left">
-      <img
-        :src="user.image_url || '/images/default-profile.jpg'"
-        alt="Profile"
-        class="profile-img"
-        @error="handleImageError"
-      />
+      <img :src="user.image_url || '/images/default-profile.jpg'" alt="Profile" class="profile-img"
+        @error="handleImageError" />
       <p class="profile-name">{{ user.first_name }} {{ user.last_name }}</p>
       <p>อีเมล : {{ user.email }}</p>
       <p>ตำแหน่งงาน : {{ user.position || "—" }}</p>
-      <p>โทรศัพท์ : {{ user.phone || "—" }}</p>
       <!-- <button class="edit-btn">✏️ แก้ไขรูป</button> -->
     </div>
 
@@ -62,23 +57,17 @@ onMounted(async () => {
       <div class="form-grid">
         <div>
           <label>ชื่อ</label>
-          <input
-            disabled
-            class="input-box"
-            type="text"
-            placeholder="กรอกชื่อ"
-            :value="user.first_name"
-          />
+          <input disabled class="input-box" type="text" placeholder="กรอกชื่อ" :value="user.first_name" />
         </div>
         <div>
           <label>นามสกุล</label>
-          <input
-            disabled
-            class="input-box"
-            type="text"
-            placeholder="กรอกนามสกุล"
-            :value="user.last_name"
-          />
+          <input disabled class="input-box" type="text" placeholder="กรอกนามสกุล" :value="user.last_name" />
+        </div>
+      </div>
+      <div class="form-grid">
+        <div>
+          <label>เบอร์โทรศัพท์</label>
+          <input disabled class="input-box" type="text" placeholder="กรอกเบอร์โทรศัพท์" :value="user.phone || '—'" />
         </div>
       </div>
 
@@ -107,11 +96,12 @@ onMounted(async () => {
 }
 
 .profile-left {
-  width: 270px;
+  width: 250px;
   padding: 20px;
   border: 1px solid #ccc;
   border-radius: 12px;
-  text-align: center;
+  text-align: start;
+  height: 40%;
 }
 
 .profile-img {
@@ -196,9 +186,11 @@ h2 {
   cursor: pointer;
   font-weight: bold;
   margin-right: 20px;
-  margin-top: 75px;
+  margin-top: 50px;
 }
+
 .btn-orange:hover {
   background-color: #eeaf67;
+  transition: background-color 0.3s ease;
 }
 </style>

@@ -109,6 +109,7 @@ onMounted(async () => {
 }
 .button-calendar:hover {
     background-color: #45a049;
+    transition: background-color 0.3s ease;
 }
 
 .button-back {
@@ -122,5 +123,6 @@ onMounted(async () => {
 }
 .button-back:hover {
     background-color: #e53935;
+    transition: background-color 0.3s ease;
 }
 </style>

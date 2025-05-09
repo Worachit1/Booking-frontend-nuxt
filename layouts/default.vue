@@ -39,7 +39,7 @@ onMounted(() => {
   </div>
 </template>
 
-<style scoped>
+<style >
 .sidebar {
   transition: transform 1.0s ease;
 }

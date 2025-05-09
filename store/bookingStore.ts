@@ -74,9 +74,8 @@ export const useBookingStore = defineStore("booking", {
             });
     
             if (response.status === 200) {
-            return response.data.data;
-            } else {
-            console.error("Error fetching booking:", response.statusText);
+              console.log("Booking fetched successfully:", response.data.data);
+              this.bookings = response.data.data; // Update the bookings state with the fetched data
             }
         } catch (error) {
             console.error("Error fetching booking:", error);

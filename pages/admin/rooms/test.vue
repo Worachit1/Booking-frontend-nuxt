@@ -143,6 +143,7 @@
   
   .upload-btn:hover {
     background-color: #1976d2;
+    transition: background-color 0.3s ease;
   }
   
   .form-fields {
@@ -191,5 +192,6 @@
   
   .submit-btn button:hover {
     background-color: #388e3c;
+    transition: background-color 0.3s ease;
   }
   </style>
