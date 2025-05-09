@@ -35,7 +35,11 @@ export const useBuildingStore = defineStore("building", {
     },
     async addBuilding(newBuilding: { name: string;}) {
       try {
-        const response = await axios.post(`${config.public.apiBase}/api/v1/buildings/create`, newBuilding);
+        const token = localStorage.getItem("token");
+        const headers = token ? { Authorization: `Bearer ${token}` } : {};
+        const response = await axios.post(`${config.public.apiBase}/api/v1/buildings/create`, newBuilding, {
+          headers,
+        });
         if (response.status === 200) {
           console.log("Building added successfully:", response.data.data);
         } else {
@@ -47,7 +51,11 @@ export const useBuildingStore = defineStore("building", {
     },
     async updateBuilding(id: string, updatedBuilding: { name: string;}) {
       try {
-        const response = await axios.patch(`${config.public.apiBase}/api/v1/buildings/${id}`, updatedBuilding);
+        const token = localStorage.getItem("token");
+        const headers = token ? { Authorization: `Bearer ${token}` } : {};
+        const response = await axios.patch(`${config.public.apiBase}/api/v1/buildings/${id}`, updatedBuilding, {
+          headers,
+        });
         if (response.status === 200) {
           console.log("Building updated successfully:", response.data.data);
         } else {
@@ -59,7 +67,11 @@ export const useBuildingStore = defineStore("building", {
     },
     async deleteBuilding(id: string) {
       try {
-        const response = await axios.delete(`${config.public.apiBase}/api/v1/buildings/${id}`);
+        const token = localStorage.getItem("token");
+        const headers = token ? { Authorization: `Bearer ${token}` } : {};
+        const response = await axios.delete(`${config.public.apiBase}/api/v1/buildings/${id}`, {
+          headers,
+        });
         if (response.status === 200) {
           console.log("Building deleted successfully:", response.data.data);
         } else {

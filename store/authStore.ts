@@ -53,6 +53,7 @@ export const useAuthStore = defineStore("auth", {
                 this.token = token;
 
                 localStorage.setItem("token", token);
+                console.log("Token saved to localStorage:", token);
                 return user;
             } catch (error: any) {
                 console.error("Login error:", error);

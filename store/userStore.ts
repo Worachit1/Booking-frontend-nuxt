@@ -112,5 +112,24 @@ export const useUserStore = defineStore("user", {
                 console.error("Error updating user:", error);
             }
         },
+        async deleteUser(user_id: string) {
+            const config = useRuntimeConfig();
+            const token = localStorage.getItem("token") || null;
+            const headers = token ? { Authorization: `Bearer ${token}` } : {};
+
+            try {
+                const response = await axios.delete(`${config.public.apiBase}/api/v1/users/${user_id}`, {
+                    headers,
+                });
+                if (response.status === 200) {
+                    console.log("User deleted successfully:", response.data.data);
+                    return response.data;
+                } else {
+                    console.error("Error deleting user:", response.statusText);
+                }
+            } catch (error) {
+                console.error("Error deleting user:", error);
+            }
+        },
     },
 });
