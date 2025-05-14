@@ -48,8 +48,6 @@ onMounted(async () => {
   }
 });
 
-
-
 const handleConfirm = async () => {
   if (!Booking.value.title.trim()) {
     alert("กรุณากรอกชื่อการจอง");
@@ -67,17 +65,36 @@ const handleConfirm = async () => {
     alert("เวลาสิ้นสุดต้องมากกว่าเวลาเริ่มต้น");
     return;
   }
-  // ดักเพื่อไม่ใช้ user จองเวลาในอดีต
+  // ดักเพื่อไม่ให้ผู้ใช้จองเวลาในอดีต
   const now = new Date();
-    const startTime = new Date(Booking.value.start_time);
+  const startTime = new Date(Booking.value.start_time);
 
-    if (startTime < now) {
-      alert("❗ ไม่สามารถจองวันหรือเวลาในอดีตได้");
-      return;
+  if (startTime < now) {
+    alert("❗ ไม่สามารถจองวันหรือเวลาในอดีตได้");
+    return;
+  }
+
+  // ตรวจสอบเวลาทับซ้อนกับการจองที่มีสถานะเป็น "Approved"
+  await bookingStore.fetchBookings();  // ดึงข้อมูลการจองทั้งหมด
+  const isOverlapping = bookingStore.bookings.some(booking => {
+    if (booking.status === "Approved" && booking.room_id === Booking.value.room_id) {
+      const existingStart = new Date(booking.start_time * 1000); // แปลงเวลาเป็น milliseconds
+      const existingEnd = new Date(booking.end_time * 1000); // แปลงเวลาเป็น milliseconds
+
+      // ตรวจสอบว่ามีการทับซ้อนกับการจองที่มีอยู่
+      return (startTime < existingEnd && startTime >= existingStart) || (new Date(Booking.value.end_time) > existingStart && new Date(Booking.value.end_time) <= existingEnd);
     }
+    return false;
+  });
+
+  if (isOverlapping) {
+    alert("❗ ห้องนี้มีการจองในเวลาที่เลือกแล้ว โปรดเช็คเวลาอีกครั้ง");
+    return;
+  }
 
   showMoadal.value = true;
 };
+
 
 const handleCreateBooking = async () => {
   try {
@@ -86,14 +103,14 @@ const handleCreateBooking = async () => {
       alert("ไม่พบข้อมูลผู้จองหรือเบอร์โทร กรุณาเข้าสู่ระบบใหม่อีกครั้ง");
       return;
     }
-    
-    
 
     const payload = {
       title: Booking.value.title.trim(),
       description: Booking.value.description.trim(),
-      start_time: new Date(Booking.value.start_time).toISOString(),
-      end_time: new Date(Booking.value.end_time).toISOString(),
+      start_time: Math.floor(
+        new Date(Booking.value.start_time).getTime()/1000
+      ), // ✅ seconds
+      end_time: Math.floor(new Date(Booking.value.end_time).getTime()/1000), // ✅ seconds
       room_id: Booking.value.room_id,
       user_id: Booking.value.user_id,
       phone: Booking.value.phone,
@@ -110,11 +127,12 @@ const handleCreateBooking = async () => {
       Booking.value = {
         title: "",
         description: "",
-        start_time: "",
-        end_time: "",
+        start_time: 0,
+        end_time: 0,
         phone: "",
         room_id: null,
         user_id: null,
+        approved_by: null,
         status: "Pending",
       };
       showMoadal.value = false;
@@ -122,14 +140,13 @@ const handleCreateBooking = async () => {
       alert("❌ ไม่สามารถสร้างการจองได้");
     }
   } catch (error) {
-  console.error("❌ Error creating booking:", error);
-  if (error.response) {
-    console.error("📄 Backend Response Error:", error.response.data);
+    console.error("❌ Error creating booking:", error);
+    if (error.response) {
+      console.error("📄 Backend Response Error:", error.response.data);
+    }
+    alert("เกิดข้อผิดพลาดในการสร้างการจอง");
   }
-  alert("เกิดข้อผิดพลาดในการสร้างการจอง");
-}
 };
-
 
 const handleCancel = () => {
   showMoadal.value = false; // ปิด modal
@@ -147,21 +164,11 @@ const handleCancel = () => {
         </div>
         <div class="form-group">
           <label for="start_time">วันเวลาเริ่มจอง:</label>
-          <input
-            id="start_time"
-            v-model="Booking.start_time"
-            type="datetime-local"
-            required
-          />
+          <input id="start_time" v-model="Booking.start_time" type="datetime-local" required />
         </div>
         <div class="form-group">
           <label for="end_time">วันเวลาสิ้นสุดการจอง:</label>
-          <input
-            id="end_time"
-            v-model="Booking.end_time"
-            type="datetime-local"
-            required
-          />
+          <input id="end_time" v-model="Booking.end_time" type="datetime-local" required />
         </div>
       </div>
 
@@ -169,51 +176,32 @@ const handleCancel = () => {
         <div class="form-group">
           <label for="room_id">ห้องที่จอง:</label>
           <select id="room_id" v-model="Booking.room_id" required>
-            <option
-              v-for="room in roomStore.rooms"
-              :key="room.id"
-              :value="room.id"
-            >
+            <option v-for="room in roomStore.rooms" :key="room.id" :value="room.id">
               {{ room.name }}
             </option>
           </select>
         </div>
-        <div v-if="user" class="form-group" >
+        <div v-if="user" class="form-group">
           <label for="user_id">ผู้ที่จองห้องประชุม:</label>
-          <input
-            disabled
-            id="user"
-            :value="user.first_name + ' ' + user.last_name" 
-            type="text"
-            required
-            style="color: #c2c4c3;"
-          />
+          <input disabled id="user" :value="user.first_name + ' ' + user.last_name" type="text" required
+            style="color: #c2c4c3" />
         </div>
         <div v-if="user" class="form-group">
           <label for="phone">เบอร์ติดต่อ:</label>
-          <input
-            disabled
-            id="phone"
-            :value="user.phone" 
-            type="text"
-            required
-            style="color: #c2c4c3;"
-          />
+          <input disabled id="phone" :value="user.phone" type="text" required style="color: #c2c4c3" />
         </div>
       </div>
 
       <div class="form-row">
         <div class="form-group">
           <label for="description">รายละเอียดการประชุม:</label>
-          <textarea
-            id="description"
-            v-model="Booking.description"
-            required
-          ></textarea>
+          <textarea id="description" v-model="Booking.description" required></textarea>
         </div>
       </div>
 
-      <button type="submit" class="create"><i class="fa-solid fa-circle-plus mr-2"></i> สร้างการจอง</button>
+      <button type="submit" class="create">
+        <i class="fa-solid fa-circle-plus mr-2"></i> สร้างการจอง
+      </button>
 
       <!-- Modal -->
       <div v-if="showMoadal" class="modal-overlay">
@@ -365,6 +353,7 @@ textarea {
   border-radius: 6px;
   cursor: pointer;
 }
+
 .confirm:hover {
   background-color: #039d2b;
   transition: background-color 0.3s;
@@ -378,6 +367,7 @@ textarea {
   border-radius: 6px;
   cursor: pointer;
 }
+
 .cancel:hover {
   background-color: #e63939;
   transition: background-color 0.3s;

@@ -35,7 +35,7 @@ onMounted(async () => {
 
         <!-- รูปภาพตรงกลาง -->
         <div class="image-container">
-            <img :src="buildingRoom?.image_url || '/images/default-room.jpg'" alt="Room Image" />
+            <img :src="buildingRoom?.image_url || '/images/default-room.jpg'" alt="Room Image" width="400px" height="400px"/>
         </div>
 
         <!-- แถวล่างที่มีรายละเอียด -->

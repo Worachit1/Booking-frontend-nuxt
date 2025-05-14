@@ -131,5 +131,24 @@ export const useUserStore = defineStore("user", {
                 console.error("Error deleting user:", error);
             }
         },
+        async approveBy ( user_id: string) {
+            const config = useRuntimeConfig();
+            const token = localStorage.getItem("token") || null;
+            const headers = token ? { Authorization: `Bearer ${token}` } : {};
+
+            try {
+                const response = await axios.post(`${config.public.apiBase}/api/v1/approve/${user_id}`, {
+                    headers,
+                });
+                if (response.status === 200) {
+                    console.log("User approved successfully:", response.data.data);
+                    return response.data;
+                } else {
+                    console.error("Error approving user:", response.statusText);
+                }
+            } catch (error) {
+                console.error("Error approving user:", error);
+            }
+        }
     },
 });

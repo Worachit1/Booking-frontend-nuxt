@@ -1,60 +1,69 @@
 <script setup>
-import { ref, computed, watch } from "vue";
+import { ref, computed, watch, onMounted } from "vue";
+import { useRouter } from "vue-router";
 import FullCalendar from "@fullcalendar/vue3";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import thLocale from "@fullcalendar/core/locales/th";
-import { useBookingStore } from "@/store/bookingStore";
 import dayjs from "dayjs";
 import "dayjs/locale/th";
+
+import { useBookingStore } from "@/store/bookingStore";
+import { useRoomStore } from "~/store/roomStore";
 
 definePageMeta({
   middleware: ["load-user"],
 });
 
+const formatDateTime = (date) => {
+  const timestamp = date < 10000000000 ? date * 1000 : date; // ถ้าน้อยกว่า 10 หลัก → เป็น seconds
+  return dayjs(timestamp).locale("th").format("D MMMM YYYY HH:mm:ss น.");
+};
+
+const router = useRouter();
 const bookingStore = useBookingStore();
+const roomStore = useRoomStore();
+
+const rooms = ref([]);
+const selectedRoomId = ref("");
+
 const events = ref([]);
 const popupVisible = ref(false);
 const selectedEvent = ref(null);
 const searchDate = ref(null);
-const loading = ref(false);
-const loadedOnce = ref(false);
 
 const loadBookings = async () => {
-  if (loadedOnce.value) return; // ป้องกันโหลดซ้ำ
-  loading.value = true;
   await bookingStore.fetchBookings();
-  events.value = bookingStore.bookings.map((booking) => {
+  
+  // กรอง booking ที่สถานะไม่ใช่ Cancel
+  const filteredBookings = bookingStore.bookings.filter(booking => booking.status !== "Cancel" && booking.status !== "Finished");  
+  
+  // แปลงข้อมูลจาก filteredBookings เป็น events
+  events.value = filteredBookings.map((booking) => {
     let backgroundColor = "#04bd35";
     if (booking.status === "Pending") backgroundColor = "#dbdb02";
-    if (booking.status === "Cancel") backgroundColor = "#f06666";
 
     return {
       id: booking.id,
-      title: booking.title || "ไม่ระบุหัวข้อ",
+      title: booking.title || "ไม่ระบุหัวข้อ", 
+      room_name: booking.room_name || "ไม่ระบุห้อง",
       description: booking.description || "ไม่ระบุรายละเอียด",
-      start: booking.start_time,
-      end: booking.end_time,
+      start: booking.start_time * 1000,
+      end: booking.end_time * 1000,
       first_name: booking.user_name || "ไม่ระบุชื่อ",
       last_name: booking.user_lastname || "ไม่ระบุนามสกุล",
-      room: booking.room_name || "ไม่ระบุห้อง",
       backgroundColor,
       borderColor: backgroundColor,
-      status: booking.status,
+      status: booking.status || "Unknown",
     };
   });
-  loadedOnce.value = true;
-  loading.value = false;
-};
+}
 
-// call loadBookings ทันทีเมื่อ component ถูกสร้าง
-watch(
-  () => true,
-  async () => {
-    await loadBookings();
-  },
-  { immediate: true }
-);
+onMounted(async () => {
+  await roomStore.fetchRooms();
+  rooms.value = roomStore.rooms;
+  await loadBookings();
+});
 
 const calendarOptions = computed(() => ({
   plugins: [dayGridPlugin, interactionPlugin],
@@ -75,6 +84,28 @@ const calendarOptions = computed(() => ({
       `status-${info.event.extendedProps.status.toLowerCase()}`
     );
   },
+  eventContent(info) {
+    const room = info.event.extendedProps.room_name || "";
+    const status = info.event.extendedProps.status || "Unknown";
+    let color = "#78f657";
+    if (status === "Pending") color = "#f3f85c";
+    if (status === "Cancel") color = "#f06666";
+
+    return {
+      html: `<div style="display:flex; align-items:center; gap:5px;">
+        <div style="width:10px; height:10px; border-radius:50%; background:${color};"></div>
+        <div>
+          <b>${room}</b>
+        </div>
+      </div>`,
+    };
+  },
+  dayMaxEvents: 2,  // แสดงได้แค่ 1 เหตุการณ์ในแต่ละวัน
+  views: {
+    dayGrid: {
+      eventLimit: true,  // เปิดใช้งาน eventLimit สำหรับ dayGrid
+    },
+  },
 }));
 
 function handleEventClick(info) {
@@ -86,19 +117,28 @@ function closePopup() {
   popupVisible.value = false;
 }
 
+const normalizeToMs = (timestamp) => {
+  return timestamp < 10000000000 ? timestamp * 1000 : timestamp;
+};
+
 const todayBookings = computed(() => {
   const today = dayjs().startOf("day");
   const tomorrow = today.add(1, "day");
   return events.value.filter(
     (event) =>
-      dayjs(event.start).isAfter(today) && dayjs(event.start).isBefore(tomorrow)
+      event.status === "Approved" &&
+      dayjs(normalizeToMs(event.start)).isAfter(today) &&
+      dayjs(normalizeToMs(event.start)).isBefore(tomorrow)
   );
 });
+
 
 const dailyBookings = computed(() => {
   const grouped = {};
   events.value.forEach((event) => {
-    const date = dayjs(event.start).startOf("day").format("YYYY-MM-DD");
+    if (event.status !== "Approved") return; // กรองสถานะไม่ใช่ Approved
+
+    const date = dayjs(normalizeToMs(event.start)).startOf("day").format("YYYY-MM-DD");
     if (!grouped[date]) {
       grouped[date] = [];
     }
@@ -107,57 +147,76 @@ const dailyBookings = computed(() => {
   return grouped;
 });
 
+
 function goToDate() {
   if (searchDate.value) {
-    const calendarApi = document.querySelector(".fc").__vueParentComponent.ctx.getApi();
+    const calendarApi =
+      document.querySelector(".fc").__vueParentComponent.ctx.getApi();
     calendarApi.gotoDate(searchDate.value);
   }
 }
-</script>
 
+const goToRoomDetail = () => {
+  if (selectedRoomId.value) {
+    router.push(`/user/bookings/bookingroom/${selectedRoomId.value}`);
+  }
+};
+</script>
 
 <template>
   <div class="app-container">
     <div class="main-content">
-      <!-- 🎯 ซ้าย: ปฏิทิน -->
+      <!-- 🎯 ปฏิทิน -->
       <div class="left-content">
         <div class="header">ปฏิทินการจอง</div>
 
+        <!-- 🏠 ค้นหาห้องแบบเลือก dropdown -->
+        <div style="display: flex; align-items: center; justify-content: flex-end;">
+          <label for="room-select" style="margin-right: 7px;">เลือกห้อง: </label>
+          <select v-model="selectedRoomId" id="room-select" class="date-input" style="margin-bottom: 10px; width: 20%">
+            <option disabled value="">--- กรุณาเลือกห้อง ---</option>
+            <option v-for="room in rooms" :key="room.id" :value="room.id">
+              {{ room.name }}
+            </option>
+          </select>
+
+          <button class="search-button" @click="goToRoomDetail" :disabled="!selectedRoomId">
+            <i class="fa-solid fa-magnifying-glass mr-2"></i> ค้นหาห้อง
+          </button>
+        </div>
+
+        <!-- 📅 ปฏิทิน -->
         <div class="calendar-container">
           <div class="calendar-header-row">
             <div class="header">ตารางการจองทั้งหมด</div>
-            <!-- 🔍 ค้นหาวันที่ -->
             <div class="calendar-search">
               <input type="date" v-model="searchDate" class="date-input" />
-              <button @click="goToDate" class="search-button"><i class="fa-solid fa-magnifying-glass mr-2"></i> ค้นหา</button>
+              <button @click="goToDate" class="search-button">
+                <i class="fa-solid fa-magnifying-glass mr-2"></i> ค้นหา
+              </button>
             </div>
           </div>
           <FullCalendar :options="calendarOptions" />
           <div class="calendar-footer">
-            <a class="booking-button" href="/user/bookings/createBooking"
-              ><i class="fa-solid fa-circle-plus mr-2"></i> จองห้อง</a
-            >
+            <a class="booking-button" href="/user/bookings/createBooking">
+              <i class="fa-solid fa-circle-plus mr-2"></i> จองห้อง
+            </a>
           </div>
         </div>
       </div>
 
-      <!-- 🧾 ขวา: ตารางวันนี้ + รวม -->
+      <!-- 🧾 ตาราง -->
       <div class="right-content">
-        <!-- 📌 ตารางการจองวันนี้ -->
+        <!-- 📌 วันนี้ -->
         <div class="today-bookings">
           <h2>
             📌 ตารางการจองวันนี้ ({{
-              dayjs().locale("th").format("D MMMM YYYY")
+              dayjs(date, "YYYY-MM-DD").locale("th").format("D MMMM YYYY")
             }})
           </h2>
 
           <div v-if="todayBookings.length > 0">
-            <table
-              border="1"
-              cellpadding="8"
-              cellspacing="0"
-              style="width: 100%; margin-bottom: 20px"
-            >
+            <table border="1" cellpadding="8" cellspacing="0" style="width: 100%; margin-bottom: 20px">
               <thead>
                 <tr class="header-row">
                   <th>หัวข้อ</th>
@@ -168,44 +227,30 @@ function goToDate() {
                   <th>ห้องที่จอง</th>
                 </tr>
               </thead>
-
               <tbody>
                 <tr v-for="(event, index) in todayBookings" :key="index">
                   <td>{{ event.title }}</td>
                   <td>{{ event.description }}</td>
-                  <td>
-                    {{ dayjs(event.start).format("DD/MM/YYYY") }}<br />
-                    เวลา {{ dayjs(event.start).format("HH:mm") }} น.
-                  </td>
-                  <td>
-                    {{ dayjs(event.end).format("DD/MM/YYYY") }}<br />
-                    เวลา {{ dayjs(event.end).format("HH:mm") }} น.
-                  </td>
+                  <td>{{ formatDateTime(event.start) }}</td>
+                  <td>{{ formatDateTime(event.end) }}</td>
                   <td>{{ event.first_name }} {{ event.last_name }}</td>
-                  <td>{{ event.room }}</td>
+                  <td>{{ event.room_name }}</td>
                 </tr>
               </tbody>
             </table>
           </div>
-
           <div v-else class="no-bookings">ไม่มีการจองในวันนี้</div>
         </div>
 
-        <!-- 📋 ตารางรวมการจองทั้งหมด -->
+        <!-- 📋 รวมทั้งหมด -->
         <div class="all-bookings">
           <h2>📋 ตารางรวมการจองทั้งหมด</h2>
           <div v-if="Object.keys(dailyBookings).length > 0">
             <div v-for="(events, date) in dailyBookings" :key="date">
               <h3 class="date-header">
-                {{ dayjs(date).locale("th").format("D MMMM YYYY") }}
+                {{ dayjs(date, "YYYY-MM-DD").locale("th").format("D MMMM YYYY") }}
               </h3>
-
-              <table
-                border="1"
-                cellpadding="8"
-                cellspacing="0"
-                style="width: 100%; margin-bottom: 20px"
-              >
+              <table border="1" cellpadding="8" cellspacing="0" style="width: 100%; margin-bottom: 20px">
                 <thead>
                   <tr class="header-row">
                     <th>หัวข้อ</th>
@@ -216,21 +261,14 @@ function goToDate() {
                     <th>ห้องที่จอง</th>
                   </tr>
                 </thead>
-
                 <tbody>
                   <tr v-for="(event, index) in events" :key="index">
                     <td>{{ event.title }}</td>
                     <td>{{ event.description }}</td>
-                    <td>
-                      {{ dayjs(event.start).format("DD/MM/YYYY") }}<br />
-                      เวลา {{ dayjs(event.start).format("HH:mm") }} น.
-                    </td>
-                    <td>
-                      {{ dayjs(event.end).format("DD/MM/YYYY") }}<br />
-                      เวลา {{ dayjs(event.end).format("HH:mm") }} น.
-                    </td>
+                    <td>{{ formatDateTime(event.start) }}</td>
+                    <td>{{ formatDateTime(event.end) }}</td>
                     <td>{{ event.first_name }} {{ event.last_name }}</td>
-                    <td>{{ event.room }}</td>
+                    <td>{{ event.room_name }}</td>
                   </tr>
                 </tbody>
               </table>
@@ -241,32 +279,17 @@ function goToDate() {
       </div>
     </div>
 
-    <!-- 🔥 Popup แสดงรายละเอียดการจอง -->
+    <!-- 🔥 Popup -->
     <div v-if="popupVisible" class="popup-wrapper">
       <div class="popup-content">
         <div class="popup-header">📌{{ selectedEvent?.title }}</div>
         <div class="popup-body">
-          <p>
-            📝<strong>รายละเอียด:</strong>
-            {{ selectedEvent?.extendedProps?.description }}
-          </p>
-          <p>
-            🕓<strong>เริ่ม:</strong>
-            {{ dayjs(selectedEvent?.start).format("DD/MM/YYYY HH:mm") }}น.
-          </p>
-          <p>
-            🕓<strong>สิ้นสุด:</strong>
-            {{ dayjs(selectedEvent?.end).format("DD/MM/YYYY HH:mm") }}น.
-          </p>
-          <p>
-            🙋‍♂️<strong>ผู้จอง:</strong>
-            {{ selectedEvent?.extendedProps?.first_name }}
-            {{ selectedEvent?.extendedProps?.last_name }}
-          </p>
-          <p>
-            🏠<strong>ห้องที่จอง:</strong>
-            {{ selectedEvent?.extendedProps?.room }}
-          </p>
+          <p><strong>รายละเอียด:</strong> {{ selectedEvent?.extendedProps?.description }}</p>
+          <p><strong>เริ่ม:</strong> {{ formatDateTime(selectedEvent?.start) }} </p>
+          <p><strong>สิ้นสุด:</strong> {{ formatDateTime(selectedEvent?.end) }} </p>
+          <p><strong>ผู้จอง:</strong> {{ selectedEvent?.extendedProps?.first_name }} {{
+            selectedEvent?.extendedProps?.last_name }}</p>
+          <p><strong>ห้องที่จอง:</strong> {{ selectedEvent?.extendedProps?.room_name }}</p>
         </div>
         <div class="popup-footer">
           <button @click="closePopup">ปิด</button>
@@ -279,6 +302,7 @@ function goToDate() {
 <style scoped>
 .app-container {
   display: flex;
+  flex-wrap: wrap;
 }
 
 .main-content {
@@ -300,6 +324,7 @@ function goToDate() {
   padding: 20px;
 }
 
+/* ปรับขนาด header */
 .header {
   font-size: 30px;
   font-weight: bold;
@@ -406,7 +431,6 @@ function goToDate() {
     opacity: 0;
     transform: translateY(20px);
   }
-
   to {
     opacity: 1;
     transform: translateY(0);
@@ -459,15 +483,10 @@ function goToDate() {
 
 .fc {
   background-color: #fffbfb;
-  /* สีพื้นหลังของปฏิทิน */
   border-radius: 8px;
-  /* มุมมน */
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-  /* เงา */
   padding: 5px;
-  /* ระยะห่างภายใน */
   border: 1px solid #ccc;
-  /* เส้นขอบ */
 }
 
 .calendar-header-row {
@@ -517,6 +536,7 @@ function goToDate() {
 ::v-deep(.fc-next-button) {
   border-radius: 50% !important;
 }
+
 ::v-deep(.fc-prev-button):hover,
 ::v-deep(.fc-next-button):hover {
   background-color: #5a5959 !important;
@@ -526,4 +546,46 @@ function goToDate() {
 ::v-deep(.fc-button) {
   background-color: #13131f !important;
 }
+
+/* Responsive: ปรับการแสดงผลเมื่อหน้าจอเล็กลง */
+@media (max-width: 768px) {
+  .app-container {
+    flex-direction: column;
+  }
+
+  .main-content {
+    flex-direction: column;
+    margin-left: 0;
+  }
+
+  .left-content {
+    width: 100%;
+    padding: 15px;
+  }
+
+  .right-content {
+    width: 100%;
+    padding: 15px;
+    max-height: none;
+  }
+
+  .header {
+    font-size: 24px;
+  }
+
+  .sub-header {
+    font-size: 1rem;
+  }
+
+  .search-button {
+    width: 100%;
+    margin-top: 10px;
+  }
+
+  .booking-button {
+    width: 100%;
+    margin-top: 10px;
+  }
+}
 </style>
+

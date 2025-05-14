@@ -7,14 +7,14 @@ import { useBookingStore } from "~/store/bookingStore";
 import loginmodal from "@/components/loginModal.vue";
 import registerModal from "@/components/registerModal.vue";
 
-import { useRouter} from "vue-router";
+import { useRouter } from "vue-router";
 
 import dayjs from "dayjs";
 import "dayjs/locale/th";
 
-
-const formatDate = (date) => {
-  return dayjs(date).locale("th").format("D MMMM YYYY เวลา HH:mm น.");
+const formatDateTime = (date) => {
+  const timestamp = date < 10000000000 ? date * 1000 : date; // ถ้าน้อยกว่า 10 หลัก → เป็น seconds
+  return dayjs(timestamp).locale("th").format("D MMMM YYYY HH:mm:ss น.");
 };
 
 const router = useRouter();
@@ -64,7 +64,8 @@ const statusUserBookings = computed(() => {
     return bookingStore.bookings.filter(
       (booking) =>
         booking.user_id === userId &&
-        (booking.status === "Approved" || booking.status === "Cancel")
+        (booking.status === "Approved" || booking.status === "Cancel") &&
+        !acknowledgedBookings.value.includes(booking.id) // กรองการจองที่ยังไม่ได้รับทราบ
     );
   }
   return [];
@@ -82,6 +83,15 @@ const hasUserBookings = computed(() =>
     ? statusUserBookings.value.length > 0
     : false
 );
+
+// สำหรับกดรับการจองของ User
+const acknowledgedBookings = ref([]); // เก็บ ID ของการจองที่ User รับทราบแล้ว
+function acknowledgeBooking(bookingId) {
+  if (!acknowledgedBookings.value.includes(bookingId)) {
+    acknowledgedBookings.value.push(bookingId);  // เพิ่มการจองที่รับทราบแล้ว
+    localStorage.setItem("acknowledgedBookings", JSON.stringify(acknowledgedBookings.value));  // เก็บข้อมูลใน localStorage
+  }
+}
 
 function toggleBookings() {
   showBookings.value = !showBookings.value;
@@ -126,7 +136,7 @@ function openRegisterModal() {
 
 function viewProfile() {
   closeMenu();
-  router.push({ name: 'user-profile-id', params: { id: userId } });
+  router.push({ name: "user-profile-id", params: { id: userId } });
 }
 
 async function logout() {
@@ -151,6 +161,10 @@ onMounted(async () => {
     await userRoleStore.getUserRoleById(userId);
     await bookingStore.fetchBookings(); // โหลด booking ทุกกรณี
   }
+  const storedAcknowledgedBookings = localStorage.getItem("acknowledgedBookings");
+  if (storedAcknowledgedBookings) {
+    acknowledgedBookings.value = JSON.parse(storedAcknowledgedBookings);  // โหลดข้อมูลจาก localStorage
+  }
 });
 
 onUnmounted(() => {
@@ -166,7 +180,10 @@ onUnmounted(() => {
         <!-- กระดิ่ง -->
         <div class="bell" @click="toggleBookings">
           <i class="fas fa-bell"></i>
-          <span v-if="hasPendingBookings || hasUserBookings" class="notification-dot"></span>
+          <span
+            v-if="hasPendingBookings || hasUserBookings"
+            class="notification-dot"
+          ></span>
         </div>
 
         <div
@@ -187,8 +204,8 @@ onUnmounted(() => {
                   จองโดย: {{ booking.user_name }} {{ booking.user_lastname }}
                 </p>
                 <p>
-                  {{ formatDate(booking.start_time) }} ถึง
-                  {{ formatDate(booking.end_time) }}
+                  {{ formatDateTime(booking.start_time) }} ถึง <br />
+                  {{ formatDateTime(booking.end_time) }}
                 </p>
                 <p>------------------------------</p>
               </li>
@@ -210,15 +227,24 @@ onUnmounted(() => {
                 }"
               >
                 {{
-                  booking.status === "Approved"
-                    ? "การจองของคุณได้รับการอนุมัติแล้ว"
-                    : "การจองของคุณถูกปฏิเสธ"
+                  "การจองของคุณ" +
+                  (booking.status === "Approved"
+                    ? "ได้รับการอนุมัติแล้ว"
+                    : "ถูกปฏิเสธ")
                 }}
               </p>
               <p>
-                {{ formatDate(booking.start_time)}} ถึง<br>
-                {{ formatDate(booking.end_time)}}
+                {{ formatDateTime(booking.start_time) }} ถึง<br />
+                {{ formatDateTime(booking.end_time) }}
               </p>
+
+              <!-- ปุ่มรับทราบ -->
+              <button
+                v-if="!acknowledgedBookings.includes(booking.id)"
+                @click="acknowledgeBooking(booking.id)"
+              >
+                รับทราบ
+              </button>
               <p>------------------------------</p>
             </li>
           </ul>
@@ -238,12 +264,20 @@ onUnmounted(() => {
       <div v-if="showMenu" class="dropdown-menu">
         <ul>
           <template v-if="isLoggedIn">
-            <li @click="viewProfile"><i class="fa-solid fa-address-card mr-2"></i> ดูโปรไฟล์</li>
-            <li @click="logout"><i class="fa-solid fa-right-from-bracket mr-2"></i> ออกจากระบบ</li>
+            <li @click="viewProfile">
+              <i class="fa-solid fa-address-card mr-2"></i> ดูโปรไฟล์
+            </li>
+            <li @click="logout">
+              <i class="fa-solid fa-right-from-bracket mr-2"></i> ออกจากระบบ
+            </li>
           </template>
           <template v-else>
-            <li @click="openLoginModal"><i class="fa-solid fa-user mr-2"></i> เข้าสู่ระบบ</li>
-            <li @click="openRegisterModal"><i class="fa-solid fa-user-plus mr-2"></i> สมัครสมาชิก</li>
+            <li @click="openLoginModal">
+              <i class="fa-solid fa-user mr-2"></i> เข้าสู่ระบบ
+            </li>
+            <li @click="openRegisterModal">
+              <i class="fa-solid fa-user-plus mr-2"></i> สมัครสมาชิก
+            </li>
           </template>
         </ul>
       </div>

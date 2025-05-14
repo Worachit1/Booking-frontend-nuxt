@@ -10,13 +10,10 @@ definePageMeta({
     middleware: ["load-user"],
 });
 
-const formatDate = (date) => {
-    return dayjs(date).locale("th").format("D MMMM YYYY เวลา HH:mm น.");
-};
+
 const formatDateTime = (date) => {
-    return dayjs(date * 1000)
-        .locale("th")
-        .format("D MMMM YYYY เวลา HH:mm:ss น.");
+  const timestamp = date < 10000000000 ? date * 1000 : date; // ถ้าน้อยกว่า 10 หลัก → เป็น seconds
+  return dayjs(timestamp).locale("th").format("D MMMM YYYY HH:mm:ss น.");
 };
 
 const route = useRoute();
@@ -83,8 +80,8 @@ const openModal = (booking) => {
                 <tbody>
                     <tr v-for="(booking, index) in activeBookings" :key="index">
                         <td>{{ formatDateTime(booking.created_at) }}</td>
-                        <td>{{ formatDate(booking.start_time) }}</td>
-                        <td>{{ formatDate(booking.end_time) }}</td>
+                        <td>{{ formatDateTime(booking.start_time) }}</td>
+                        <td>{{ formatDateTime(booking.end_time) }}</td>
                         <td>
                             <button :class="statusClass(booking.status)"
                                 :disabled="['Approved', 'Cancel'].includes(booking.status)" @click="openModal(booking)">
@@ -121,14 +118,14 @@ const openModal = (booking) => {
                 <tbody>
                     <tr v-for="(booking, index) in deletedBookings" :key="'deleted-' + index">
                         <td>{{ formatDateTime(booking.created_at) }}</td>
-                        <td>{{ formatDate(booking.start_time) }}</td>
-                        <td>{{ formatDate(booking.end_time) }}</td>
+                        <td>{{ formatDateTime(booking.start_time) }}</td>
+                        <td>{{ formatDateTime(booking.end_time) }}</td>
                         <td>
                             <button :class="statusClass(booking.status)" disabled>
                                 {{ booking.status }}
                             </button>
                         </td>
-                        <td>{{ formatDate(booking.deleted_at) }}</td>
+                        <td>{{ formatDateTime(booking.deleted_at) }}</td>
                     </tr>
                 </tbody>
             </table>

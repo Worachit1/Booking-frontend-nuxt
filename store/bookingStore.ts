@@ -40,8 +40,10 @@ export const useBookingStore = defineStore("booking", {
       user_id: string;
       title: string;
       description: string;
-      start_time: string;
-      end_time: string;
+      start_time: number;
+      end_time: number;
+      phone: string;
+      approved_by: string; 
       status: string;
     }) {
       try {
@@ -61,7 +63,7 @@ export const useBookingStore = defineStore("booking", {
           console.error("Error adding booking:", response.statusText);
         }
       } catch (error) {
-        console.error("Error adding booking:", error);
+       console.error("Error adding booking:", (error as any).response?.data || (error as any).message);
       }
     },
     async getBookingByuserId(user_id: string) {

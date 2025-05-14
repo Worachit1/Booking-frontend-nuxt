@@ -1,6 +1,8 @@
 <script setup>
 import { onMounted, ref, computed } from "vue";
 import { useBookingStore } from "@/store/bookingStore";
+import { useUserStore } from "@/store/userStore";
+import { useRoute } from "vue-router";
 import dayjs from "dayjs";
 import "dayjs/locale/th";
 definePageMeta({
@@ -11,13 +13,16 @@ definePageMeta({
 const bookingStore = useBookingStore();
 const bookings = computed(() => bookingStore.bookings);
 
-const formatDate = (date) => {
-    return dayjs(date).locale("th").format("D MMMM YYYY เวลา HH:mm น.");
-};
+const userStore = useUserStore();
+const route = useRoute();
+const userId = route.params.id || localStorage.getItem("user_id");
+
 
 const formatDateTime = (date) => {
-    return dayjs(date * 1000).locale("th").format("D MMMM YYYY เวลา HH:mm:ss น.");
+  const timestamp = date < 10000000000 ? date * 1000 : date; // ถ้าน้อยกว่า 10 หลัก → เป็น seconds
+  return dayjs(timestamp).locale("th").format("D MMMM YYYY HH:mm:ss น.");
 };
+
 const statusClass = (status) => {
     return {
         'btn-pending': status === 'Pending',
@@ -56,6 +61,7 @@ const openModal = (booking) => {
 onMounted(async () => {
     await bookingStore.fetchBookings();
     bookings.value = bookingStore.bookings;
+    
 });
 
 </script>
@@ -74,6 +80,7 @@ onMounted(async () => {
                             <th>เวลาเริ่มจอง</th>
                             <th>เวลาสิ้นสุดจอง</th>
                             <th>สถานะ</th>
+                            <th>อนุมัติการจองโดย</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -82,8 +89,8 @@ onMounted(async () => {
                             <td>{{ formatDateTime(booking.created_at) }}</td>
                             <td>{{ booking.user_name }} {{ booking.user_lastname }}</td>
                             <td>{{ booking.room_name }} </td>
-                            <td>{{ formatDate(booking.start_time) }}</td>
-                            <td>{{ formatDate(booking.end_time) }}</td>
+                            <td>{{ formatDateTime(booking.start_time) }}</td>
+                            <td>{{ formatDateTime(booking.end_time) }}</td>
                             <td>
                                 <button :class="statusClass(booking.status)"
                                     :disabled="booking.status === 'Approved' || booking.status === 'Cancel'"
