@@ -83,7 +83,7 @@ export const useBookingStore = defineStore("booking", {
             console.error("Error fetching booking:", error);
         }
         },
-    async updateStatusBooking(id: string, updatedBooking: { status: string }) {
+    async updateStatusBooking(id: string, updatedBooking: { status: string, approved_by: string }) {
       try {
         const token = localStorage.getItem("token");
         const headers = token ? { Authorization: `Bearer ${token}` } : {};

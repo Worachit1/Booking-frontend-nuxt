@@ -52,7 +52,7 @@ const loadBookings = async () => {
   await bookingStore.fetchBookingByRoomId(roomId.value);
   
   // กรอง booking ที่สถานะไม่ใช่ Cancel
-  const filteredBookings = bookingStore.bookings.filter(booking => booking.status !== "Cancel" && booking.status !== "Finished");  
+  const filteredBookings = bookingStore.bookings.filter(booking => booking.status !== "Canceled" && booking.status !== "Finished");  
 
   // แปลงข้อมูลจาก filteredBookings
   events.value = filteredBookings.map((booking) => {
@@ -119,7 +119,7 @@ const calendarOptions = computed(() => ({
     const status = info.event.extendedProps.status || "Unknown";
     let color = "#78f657";
     if (status === "Pending") color = "#f3f85c";
-    if (status === "Cancel") color = "#f06666";
+    if (status === "Canceled") color = "#f06666";
 
     return {
       html: `<div style="display:flex; align-items:center; gap:5px;">
@@ -158,15 +158,19 @@ const todayBookings = computed(() => {
   const tomorrow = today.add(1, "day");
   return events.value.filter(
     (event) =>
-      dayjs(event.start).isAfter(today) &&
-      dayjs(event.start).isBefore(tomorrow)
+      event.status === "Approved" &&
+      dayjs(normalizeToMs(event.start)).isAfter(today) &&
+      dayjs(normalizeToMs(event.start)).isBefore(tomorrow)
   );
 });
+
 
 const dailyBookings = computed(() => {
   const grouped = {};
   events.value.forEach((event) => {
-    const date = dayjs(event.start).startOf("day").format("YYYY-MM-DD");
+    if (event.status !== "Approved") return; // กรองสถานะไม่ใช่ Approved
+
+    const date = dayjs(normalizeToMs(event.start)).startOf("day").format("YYYY-MM-DD");
     if (!grouped[date]) {
       grouped[date] = [];
     }
@@ -179,6 +183,7 @@ function goToRoomDetail() {
   if (selectedRoomId.value && selectedRoomId.value !== "ทั้งหมด") {
     // ถ้ามีการเลือกห้อง, ไปที่รายละเอียดห้อง
     router.push(`/user/bookings/bookingroom/${selectedRoomId.value}`);
+    loading.value = true;
   } else if (selectedRoomId.value === "ทั้งหมด") {
     // ถ้าเลือก "ทั้งหมด", ไปที่หน้าแรก
     router.push("/");
@@ -187,11 +192,7 @@ function goToRoomDetail() {
     alert("กรุณาเลือกห้อง");
   }
 }
-
-
 </script>
-
-
 <template>
   <div class="app-container">
     <div class="main-content">

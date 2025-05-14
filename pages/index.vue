@@ -36,7 +36,7 @@ const loadBookings = async () => {
   await bookingStore.fetchBookings();
   
   // กรอง booking ที่สถานะไม่ใช่ Cancel
-  const filteredBookings = bookingStore.bookings.filter(booking => booking.status !== "Cancel" && booking.status !== "Finished");  
+  const filteredBookings = bookingStore.bookings.filter(booking => booking.status !== "Canceled" && booking.status !== "Finished");  
   
   // แปลงข้อมูลจาก filteredBookings เป็น events
   events.value = filteredBookings.map((booking) => {
@@ -89,7 +89,7 @@ const calendarOptions = computed(() => ({
     const status = info.event.extendedProps.status || "Unknown";
     let color = "#78f657";
     if (status === "Pending") color = "#f3f85c";
-    if (status === "Cancel") color = "#f06666";
+    if (status === "Canceled") color = "#f06666";
 
     return {
       html: `<div style="display:flex; align-items:center; gap:5px;">

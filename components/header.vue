@@ -64,7 +64,7 @@ const statusUserBookings = computed(() => {
     return bookingStore.bookings.filter(
       (booking) =>
         booking.user_id === userId &&
-        (booking.status === "Approved" || booking.status === "Cancel") &&
+        (booking.status === "Approved" || booking.status === "Canceled") &&
         !acknowledgedBookings.value.includes(booking.id) // กรองการจองที่ยังไม่ได้รับทราบ
     );
   }
@@ -223,7 +223,7 @@ onUnmounted(() => {
               <p
                 :class="{
                   'text-green': booking.status === 'Approved',
-                  'text-red': booking.status === 'Cancel',
+                  'text-red': booking.status === 'Canceled',
                 }"
               >
                 {{
