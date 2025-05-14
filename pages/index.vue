@@ -156,11 +156,20 @@ function goToDate() {
   }
 }
 
-const goToRoomDetail = () => {
-  if (selectedRoomId.value) {
+function goToRoomDetail() {
+  if (selectedRoomId.value && selectedRoomId.value !== "ทั้งหมด") {
+    // ถ้ามีการเลือกห้อง, ไปที่รายละเอียดห้อง
     router.push(`/user/bookings/bookingroom/${selectedRoomId.value}`);
+    loading.value = true;
+  } else if (selectedRoomId.value === "ทั้งหมด") {
+    // ถ้าเลือก "ทั้งหมด", ไปที่หน้าแรก
+    router.push("/");
+  } else {
+    // ถ้ายังไม่ได้เลือกห้อง
+    alert("กรุณาเลือกห้อง");
   }
-};
+}
+
 </script>
 
 <template>

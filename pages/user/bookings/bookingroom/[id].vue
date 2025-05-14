@@ -37,63 +37,74 @@ const selectedEvent = ref(null);
 const searchDate = ref(null);
 
 const loading = ref(false);
-const loadedOnce = ref(false);
+
 
 onMounted(async () => {
   await roomStore.fetchRooms();
   rooms.value = roomStore.rooms;
-  await loadBookings();
+
+  // ถ้ามี roomId ตั้งแต่เริ่มต้น
+  if (roomId.value) {
+    await loadBookings();
+  }
 });
 
+
 const loadBookings = async () => {
-  if (!roomId.value || loadedOnce.value) return;
+  if (!roomId.value) return;
   loading.value = true;
 
-  await bookingStore.fetchBookingByRoomId(roomId.value);
-  
-  // กรอง booking ที่สถานะไม่ใช่ Cancel
-  const filteredBookings = bookingStore.bookings.filter(booking => booking.status !== "Canceled" && booking.status !== "Finished");  
+  try {
+    await bookingStore.fetchBookingByRoomId(roomId.value);
+    console.log("Booking data:", bookingStore.bookings);
 
-  // แปลงข้อมูลจาก filteredBookings
-  events.value = filteredBookings.map((booking) => {
-    let backgroundColor = "#04bd35";
-    if (booking.status === "Pending") backgroundColor = "#dbdb02";
+    const filteredBookings = bookingStore.bookings.filter(
+      booking => booking.status !== "Canceled" && booking.status !== "Finished"
+    );
 
-    return {
-      id: booking.id,
-      title: booking.title || "ไม่ระบุหัวข้อ", 
-      room_name: booking.room_name || "ไม่ระบุห้อง",
-      description: booking.description || "ไม่ระบุรายละเอียด",
-      start: booking.start_time * 1000,
-      end: booking.end_time * 1000,
-      first_name: booking.user_name || "ไม่ระบุชื่อ",
-      last_name: booking.user_lastname || "ไม่ระบุนามสกุล",
-      backgroundColor,
-      borderColor: backgroundColor,
-      status: booking.status || "Unknown",
-    };
-  });
+    // ตรวจสอบว่ามีการจองห้องนี้หรือไม่
+    if (filteredBookings.length > 0) {
+      roomName.value = filteredBookings[0].room_name;
+    } else {
+      // ถ้าไม่มีการจองในห้องนั้นๆ, แสดงชื่อห้อง
+      const roomData = await roomStore.getById(roomId.value);
+      roomName.value = roomData ? roomData.name : "ไม่พบชื่อห้อง";
+    }
 
-  if (filteredBookings.length > 0) {
-    roomName.value = filteredBookings[0].room_name;
-  } else {
-    const roomData = await roomStore.getById(roomId.value);
-    roomName.value = roomData ? roomData.name : "ไม่ระบุห้อง";
+    events.value = filteredBookings.map((booking) => {
+      let backgroundColor = "#04bd35";
+      if (booking.status === "Pending") backgroundColor = "#dbdb02";
+
+      return {
+        id: booking.id,
+        title: booking.title || "ไม่ระบุหัวข้อ",
+        room_name: booking.room_name || "ไม่ระบุห้อง",
+        description: booking.description || "ไม่ระบุรายละเอียด",
+        start: booking.start_time * 1000,
+        end: booking.end_time * 1000,
+        first_name: booking.user_name || "ไม่ระบุชื่อ",
+        last_name: booking.user_lastname || "ไม่ระบุนามสกุล",
+        backgroundColor,
+        borderColor: backgroundColor,
+        status: booking.status || "Unknown",
+      };
+    });
+
+  } catch (error) {
+    console.error("เกิดข้อผิดพลาดในการโหลดข้อมูลการจอง:", error);
+    alert("ไม่สามารถโหลดข้อมูลการจองได้ กรุณาลองใหม่อีกครั้งภายหลัง");
+  } finally {
+    loading.value = false;
   }
-
-  loadedOnce.value = true;
-  loading.value = false;
 };
 
-watch(
-  roomId,
-  () => {
-    if (roomId.value && !loadedOnce.value) {
-      loadBookings();
-    }
-  },
-  { immediate: true }
-);
+watch(() => route.params.id, async (newId, oldId) => {
+  if (newId && newId !== oldId) {
+    roomId.value = newId;
+    loadedOnce.value = false;
+    await loadBookings();
+  }
+});
 
 const calendarOptions = computed(() => ({
   plugins: [dayGridPlugin, interactionPlugin],
@@ -159,10 +170,11 @@ const todayBookings = computed(() => {
   return events.value.filter(
     (event) =>
       event.status === "Approved" &&
-      dayjs(normalizeToMs(event.start)).isAfter(today) &&
-      dayjs(normalizeToMs(event.start)).isBefore(tomorrow)
+      dayjs(event.start).isAfter(today) &&
+      dayjs(event.start).isBefore(tomorrow)
   );
 });
+
 
 
 const dailyBookings = computed(() => {
@@ -170,7 +182,7 @@ const dailyBookings = computed(() => {
   events.value.forEach((event) => {
     if (event.status !== "Approved") return; // กรองสถานะไม่ใช่ Approved
 
-    const date = dayjs(normalizeToMs(event.start)).startOf("day").format("YYYY-MM-DD");
+    const date = dayjs(event.start).startOf("day").format("YYYY-MM-DD");
     if (!grouped[date]) {
       grouped[date] = [];
     }
@@ -178,6 +190,8 @@ const dailyBookings = computed(() => {
   });
   return grouped;
 });
+
+
 
 function goToRoomDetail() {
   if (selectedRoomId.value && selectedRoomId.value !== "ทั้งหมด") {
