@@ -70,9 +70,9 @@ const openModal = (booking) => {
 
 <template>
   <div class="container my-5">
-    <h3 class="mb-3">
+    <h2 class="mb-2">
       <i class="fas fa-calendar-check me-2"></i> ประวัติการจองของคุณ
-    </h3>
+    </h2>
 
     <!-- ตัวกรองสถานะ -->
     <div class="status-filter mb-3">
@@ -131,6 +131,10 @@ const openModal = (booking) => {
   margin: 20px;
 }
 
+.mb-2{
+  text-decoration: underline;
+}
+
 .status-filter {
   padding: 16px;
   background: #f8f9fa;
@@ -176,7 +180,7 @@ const openModal = (booking) => {
   color: white;
   font-size: 12px;
   position: absolute;
-  top: 0;
+  top: -2%;
   left: 3px;
 }
 
@@ -187,9 +191,11 @@ const openModal = (booking) => {
 .custom-label {
   cursor: pointer;
   font-size: 14px;
-  color: #444;
+  color: #13131f;
   user-select: none;
+  font-weight: bold;
 }
+
 
 table {
   width: 100%;
@@ -225,12 +231,11 @@ button {
   border: none;
   border-radius: 5px;
   font-size: 14px;
-  color: white;
+  color: rgb(255, 239, 239);
 }
 
 .btn-pending {
   background-color: #f9c749;
-  color: white;
 }
 .btn-pending:hover {
   background-color: #d8ba6f;
@@ -239,7 +244,6 @@ button {
 
 .btn-approved {
   background-color: #73ea8d;
-  color: white;
 }
 .btn-approved:hover {
   background-color: #5bcf6b;
@@ -248,7 +252,6 @@ button {
 
 .btn-cancel {
   background-color: #f06666;
-  color: white;
 }
 .btn-cancel:hover {
   background-color: #d9534f;
@@ -257,7 +260,6 @@ button {
 
 .btn-finished {
   background-color: #6c757d;
-  color: white;
 }
 .btn-finished:hover {
   background-color: #5a6268;

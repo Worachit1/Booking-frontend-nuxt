@@ -253,7 +253,7 @@ onMounted(() => {
 }
 
 .calendar-container {
-  background-color: white;
+  background-color: whitesmoke;
   border-radius: 8px;
   overflow: hidden;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);

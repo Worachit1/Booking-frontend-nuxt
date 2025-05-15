@@ -135,7 +135,7 @@ const handleCreateBooking = async () => {
         approved_by: null,
         status: "Pending",
       };
-      showMoadal.value = false;
+      showMoadal.value = false;; 
     } else {
       alert("❌ ไม่สามารถสร้างการจองได้");
     }

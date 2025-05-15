@@ -212,30 +212,31 @@ function goToRoomDetail() {
     <div class="main-content">
       <!-- 🎯 ปฏิทิน -->
       <div class="left-content">
-        <div class="header">ปฏิทินการจอง</div>
-
-        <!-- 🏠 ค้นหาห้องแบบเลือก dropdown -->
-        <div style="display: flex; align-items: center; justify-content: flex-end;">
-          <label for="room-select" style="margin-right: 7px;">เลือกห้อง: </label>
-          <select v-model="selectedRoomId" id="room-select" class="date-input" style="margin-bottom: 10px; width: 20%">
-            <option disabled value="">--- กรุณาเลือกห้อง ---</option>
-            <option value="ทั้งหมด">ทั้งหมด</option>
-            <option v-for="room in rooms" :key="room.id" :value="room.id">
-              {{ room.name }}
-            </option>
-          </select>
-
-          <button class="search-button" @click="goToRoomDetail" :disabled="!selectedRoomId">
-            <i class="fa-solid fa-magnifying-glass mr-2"></i> ค้นหาห้อง
-          </button>
-
+        <div class="header-calendar">
+          <div class="header">ปฏิทินการจอง</div>
+          <div class="room-search">
+            <label for="room-select" style="margin-right: 7px; font-weight: bold;">เลือกห้อง:</label>
+            <select v-model="selectedRoomId" id="room-select" class="date-input" style="margin-right: 10px">
+              <option disabled value="">--- กรุณาเลือกห้อง ---</option>
+              <option value="ทั้งหมด">ทั้งหมด</option>
+              <option v-for="room in rooms" :key="room.id" :value="room.id">
+                {{ room.name }}
+              </option>
+            </select>
+            <button class="search-button" @click="goToRoomDetail" :disabled="!selectedRoomId">
+              <i class="fa-solid fa-magnifying-glass mr-2"></i> ค้นหาห้อง
+            </button>
+          </div>
         </div>
+
+
 
         <!-- 📅 ปฏิทิน -->
         <div class="calendar-container">
           <div class="calendar-header-row">
             <div class="header">ตารางการจอง ของห้อง: {{ roomName }}</div>
             <div class="calendar-search">
+              <label for="search-date" style="margin-right: 7px; font-weight: bold;">ค้นหาวันที่:</label>
               <input type="date" v-model="searchDate" class="date-input" />
               <button @click="goToDate" class="search-button">
                 <i class="fa-solid fa-magnifying-glass mr-2"></i> ค้นหา
@@ -258,7 +259,8 @@ function goToRoomDetail() {
         <!-- 📌 วันนี้ -->
         <div class="today-bookings">
           <h2>
-            📌 ตารางการจองวันนี้ ({{
+            <i class="fa-brands fa-pinterest mr-2" style="color: crimson"></i>
+            ตารางการจองวันนี้ ({{
               dayjs(date, "YYYY-MM-DD").locale("th").format("D MMMM YYYY")
             }})
           </h2>
@@ -279,7 +281,7 @@ function goToRoomDetail() {
                 <tr v-for="(event, index) in todayBookings" :key="index">
                   <td>{{ event.title }}</td>
                   <td>{{ event.description }}</td>
-                  <td>{{ formatDateTime(event.start)  }}</td>
+                  <td>{{ formatDateTime(event.start) }}</td>
                   <td>{{ formatDateTime(event.end) }}</td>
                   <td>{{ event.first_name }} {{ event.last_name }}</td>
                   <td>{{ event.room_name }}</td>
@@ -296,7 +298,7 @@ function goToRoomDetail() {
           <div v-if="Object.keys(dailyBookings).length > 0">
             <div v-for="(events, date) in dailyBookings" :key="date">
               <h3 class="date-header">
-               {{ dayjs(date, "YYYY-MM-DD").locale("th").format("D MMMM YYYY") }}
+                {{ dayjs(date, "YYYY-MM-DD").locale("th").format("D MMMM YYYY") }}
               </h3>
               <table border="1" cellpadding="8" cellspacing="0" style="width: 100%; margin-bottom: 20px">
                 <thead>
@@ -313,7 +315,7 @@ function goToRoomDetail() {
                   <tr v-for="(event, index) in events" :key="index">
                     <td>{{ event.title }}</td>
                     <td>{{ event.description }}</td>
-                    <td>{{ formatDateTime(event.start)}}</td>
+                    <td>{{ formatDateTime(event.start) }}</td>
                     <td>{{ formatDateTime(event.end) }}</td>
                     <td>{{ event.first_name }} {{ event.last_name }}</td>
                     <td>{{ event.room_name }}</td>
@@ -328,9 +330,10 @@ function goToRoomDetail() {
     </div>
 
     <!-- 🔥 Popup -->
-   <div v-if="popupVisible" class="popup-wrapper">
+    <div v-if="popupVisible" class="popup-wrapper">
       <div class="popup-content">
-        <div class="popup-header">📌{{ selectedEvent?.title }}</div>
+        <div class="popup-header"> <i class="fa-brands fa-pinterest mr-2" style="color: crimson"></i> {{
+          selectedEvent?.title }}</div>
         <div class="popup-body">
           <p><strong>รายละเอียด:</strong> {{ selectedEvent?.extendedProps?.description }}</p>
           <p><strong>เริ่ม:</strong> {{ formatDateTime(selectedEvent?.start) }} </p>
@@ -364,6 +367,9 @@ function goToRoomDetail() {
 .left-content {
   width: 66.666%;
   padding: 20px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  border-radius: 5px;
+  margin-top: 20px;
 }
 
 .right-content {
@@ -388,11 +394,25 @@ function goToRoomDetail() {
   margin-bottom: 16px;
 }
 
+.header-calendar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.room-search {
+  display: flex;
+  align-items: center;
+}
+
 .calendar-container {
-  background-color: white;
+  background-color: whitesmoke;
   border-radius: 8px;
   overflow: hidden;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+
   padding-bottom: 10px;
   margin-top: 10px;
 }
@@ -426,40 +446,47 @@ function goToRoomDetail() {
 
 .popup-wrapper {
   position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(0, 0, 0, 0.3);
+  /* dark overlay */
   z-index: 9999;
+  animation: fadeIn 0.2s ease-in-out;
 }
 
 .popup-content {
-  background: whitesmoke;
-  padding: 25px;
-  border-radius: 10px;
-  width: 90%;
-  max-width: 400px;
-  box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
-  animation: fadeIn 0.3s ease;
+  background: white;
+  padding: 24px;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 420px;
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
+  animation: scaleIn 0.25s ease;
   max-height: 90vh;
   overflow-y: auto;
+  font-weight: 600%;
 }
 
 .popup-header {
-  font-size: 20px;
-  font-weight: bold;
-  color: #13131f;
-  margin-bottom: 10px;
+  font-size: 22px;
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 12px;
 }
 
 .popup-body {
   font-size: 16px;
-  color: #13131f;
-  margin-bottom: 20px;
+  color: #374151;
+  margin-bottom: 24px;
+  line-height: 1.6;
 }
 
 .popup-footer {
   display: flex;
-  justify-content: center;
+  justify-content: flex-end;
+  gap: 12px;
 }
 
 .popup-footer button {
@@ -476,14 +503,26 @@ function goToRoomDetail() {
   transition: background-color 0.3s ease;
 }
 
+/* Animations */
 @keyframes fadeIn {
   from {
     opacity: 0;
-    transform: translateY(20px);
   }
+
   to {
     opacity: 1;
-    transform: translateY(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+
+  to {
+    transform: scale(1);
+    opacity: 1;
   }
 }
 
@@ -544,6 +583,7 @@ function goToRoomDetail() {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 20px;
+  margin-top: -10px;
 }
 
 .calendar-search {

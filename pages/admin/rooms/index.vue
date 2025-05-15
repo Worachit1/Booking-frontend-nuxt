@@ -5,10 +5,9 @@ import { useBuildingStore } from "@/store/buildingStore";
 import { useRouter } from "vue-router";
 import { useBookingStore } from "~/store/bookingStore";
 
-
 const router = useRouter();
 definePageMeta({
-  middleware: ["load-user"] // Corrected middleware name
+  middleware: ["load-user"], // Corrected middleware name
 });
 
 const bookingStore = useBookingStore();
@@ -17,7 +16,6 @@ const buildingStore = useBuildingStore();
 
 const rooms = ref([]);
 const buildings = ref([]);
-
 
 const selectedRoom = ref(null);
 
@@ -69,50 +67,69 @@ onMounted(async () => {
 </script>
 
 <template>
-  <h1><i class="fa-solid fa-house-chimney mr-2"></i> รายการห้องประชุม</h1>
   <div class="container">
-    <div class="row">
-      <div class="col-md-12">
-        <div class="header-actions">
-          <button class="btn-create" @click="router.push('/admin/rooms/createRoom')">
-            <i class="fa-solid fa-circle-plus mr-2"></i> เพิ่มห้อง
-          </button>
-        </div>
-        <table class="table table-bordered table-striped"  v-if="rooms.length">
-          <thead>
-            <tr >
-              <th>รูปภาพ</th>
-              <th>ชื่อห้อง</th>
-              <th>จำนวนที่เข้าประชุมได้</th>
-              <th>คำอธิบาย</th>
-              <th>จัดการ</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="room in rooms" :key="room.id" class="room-cell">
-              <td>
-                <img :src="room.image_url" alt="room" width="100" height="100" />
-              </td>
-              <td>{{ room.name }}</td>
-              <td >{{ room.capacity }}</td>
-              <td>{{ room.description }}</td>
-              <td>
-                <button class="btn-edit" @click="goTodetail(room.id)"><i class="fa-solid fa-info mr-2"></i> ดูข้อมูล</button>
-                <button class="btn-cancel" @click="handleDeleteRoom(room.id)"><i class="fa-solid fa-trash-can mr-2"></i> ลบ</button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-        <div v-else>ไม่มีห้องประชุมในระบบ</div>
-      </div>
+    <div class="header-row">
+      <h1><i class="fa-solid fa-house-chimney mr-2"></i> รายการห้องประชุม</h1>
+      <button
+        class="btn-create"
+        @click="router.push('/admin/rooms/createRoom')"
+      >
+        <i class="fa-solid fa-circle-plus mr-2"></i> เพิ่มห้อง
+      </button>
     </div>
+
+    <table class="table table-bordered table-striped" v-if="rooms.length">
+      <thead>
+        <tr>
+          <th>รูปภาพ</th>
+          <th>ชื่อห้อง</th>
+          <th>จำนวนที่เข้าประชุมได้</th>
+          <th>คำอธิบาย</th>
+          <th>จัดการ</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr v-for="room in rooms" :key="room.id" class="room-cell">
+          <td>
+            <img :src="room.image_url" alt="room" width="100" height="100" />
+          </td>
+          <td>{{ room.name }}</td>
+          <td>{{ room.capacity }}</td>
+          <td>{{ room.description }}</td>
+          <td>
+            <button class="btn-detail" @click="goTodetail(room.id)">
+              <i class="fa-solid fa-info mr-2"></i> ดูข้อมูล
+            </button>
+            <button class="btn-cancel" @click="handleDeleteRoom(room.id)">
+              <i class="fa-solid fa-trash-can mr-2"></i> ลบ
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <div v-else>ไม่มีห้องประชุมในระบบ</div>
   </div>
 </template>
 
 <style scoped>
 .container {
+  padding: 15px;
   margin: 20px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 }
+
+.header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.header-row h1 {
+  margin: 0;
+  font-size: 24px;
+}
+
 
 .room-cell {
   text-align: center;
@@ -124,11 +141,12 @@ onMounted(async () => {
   border-spacing: 0;
   border-radius: 8px;
   overflow: hidden;
-  background-color: whitesmoke;
+  background-color: #fafafa;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
-th, td {
+th,
+td {
   padding: 16px;
   vertical-align: middle;
   border-bottom: 1px solid #eaeaea;
@@ -141,14 +159,13 @@ th {
 }
 
 tr:hover {
-  background-color: #fafafa;
+  background-color: #f2f2f2;
 }
 
 img {
   border-radius: 8px;
   object-fit: cover;
 }
-
 
 td:last-child {
   white-space: nowrap;
@@ -158,7 +175,6 @@ td:last-child {
   justify-content: center;
   align-items: center;
 }
-
 
 img {
   border-radius: 6px;
@@ -175,7 +191,7 @@ button {
   font-weight: bold;
 }
 
-h1{
+h1 {
   text-decoration: underline;
 }
 
@@ -192,14 +208,13 @@ h1{
   font-weight: bold;
   gap: 5px;
   transition: background-color 0.3s;
-  border: 1px solid #13131f;;
+  border: 1px solid #13131f;
 }
 
 .header-actions {
   display: flex;
-  justify-content: flex-end; 
+  justify-content: flex-end;
   margin-bottom: 20px;
-  
 }
 
 .btn-create:hover {
@@ -207,14 +222,15 @@ h1{
   transition: background-color 0.3s ease;
 }
 
-.btn-edit {
+.btn-detail {
   background-color: #5bc0de;
   color: white;
   border: none;
   padding: 7px 15px;
+  margin-top: 30px;
 }
 
-.btn-edit:hover {
+.btn-detail:hover {
   background-color: #31b0d5;
   transition: background-color 0.3s ease;
 }
@@ -225,6 +241,7 @@ h1{
   border: none;
   padding: 7px 15px;
   margin-left: 10px;
+   margin-top: 30px;
 }
 
 .btn-cancel:hover {
@@ -264,6 +281,4 @@ h1{
 .modal-actions button {
   margin: 10px;
 }
-
-
 </style>

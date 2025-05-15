@@ -29,7 +29,7 @@ onMounted(async () => {
     <div class="room-details-container">
         <!-- แถวบนสุด -->
         <div class="header-row">
-            <h1>🏠 รายละเอียดห้อง</h1>
+            <h1><i class="fa-solid fa-house-chimney mr-2"></i> รายละเอียดห้อง</h1>
             <h2>ห้อง:{{ buildingRoom?.room_name }} {{ buildingRoom?.building_name ? 'อาคาร:' + buildingRoom.building_name : '' }}</h2>
         </div>
 
@@ -57,6 +57,7 @@ onMounted(async () => {
     max-width: 800px;
     margin: 0 auto;
     padding: 20px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 }
 
 .header-row {
@@ -84,7 +85,7 @@ onMounted(async () => {
 }
 
 .info-box {
-    background-color: #f5f5f5;
+    background-color: #eae8e8;
     padding: 12px 20px;
     border-radius: 8px;
     flex: 1;

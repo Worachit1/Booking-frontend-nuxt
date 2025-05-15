@@ -239,7 +239,7 @@ h1 {
   color: white;
   font-size: 12px;
   position: absolute;
-  top: 0;
+  top: -2%;
   left: 3px;
 }
 
@@ -250,14 +250,16 @@ h1 {
 .custom-label {
   cursor: pointer;
   font-size: 14px;
-  color: #444;
+  color: #13131f;
   user-select: none;
+  font-weight: bold;
 }
 
 table {
   width: 100%;
   border-collapse: collapse;
   margin-top: 20px;
+  background-color: #ffffff;
 }
 
 th,
@@ -284,12 +286,11 @@ button {
   border: none;
   border-radius: 5px;
   font-size: 14px;
-  color: white;
+  color: rgb(255, 239, 239);
 }
 
 .btn-pending {
   background-color: #f9c749;
-  color: white;
   cursor: pointer;
 }
 
@@ -300,7 +301,6 @@ button {
 
 .btn-approved {
   background-color: #73ea8d;
-  color: white;
 }
 
 .btn-approved:hover {
@@ -310,7 +310,6 @@ button {
 
 .btn-cancel {
   background-color: #f06666;
-  color: white;
   text-decoration: line-through;
 }
 
@@ -321,7 +320,6 @@ button {
 
 .btn-finished {
   background-color: #6c757d;
-  color: white;
   text-decoration: line-through;
 }
 
@@ -356,7 +354,6 @@ button {
 
 .btn-close {
   background-color: #f3c735;
-  color: white;
 }
 
 .btn-close:hover {
