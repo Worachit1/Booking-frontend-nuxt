@@ -69,7 +69,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <h1>รายการห้องประชุม</h1>
+  <h1><i class="fa-solid fa-house-chimney mr-2"></i> รายการห้องประชุม</h1>
   <div class="container">
     <div class="row">
       <div class="col-md-12">
@@ -78,9 +78,9 @@ onMounted(async () => {
             <i class="fa-solid fa-circle-plus mr-2"></i> เพิ่มห้อง
           </button>
         </div>
-        <table class="table table-bordered table-striped" v-if="rooms.length">
+        <table class="table table-bordered table-striped"  v-if="rooms.length">
           <thead>
-            <tr>
+            <tr >
               <th>รูปภาพ</th>
               <th>ชื่อห้อง</th>
               <th>จำนวนที่เข้าประชุมได้</th>
@@ -89,12 +89,12 @@ onMounted(async () => {
             </tr>
           </thead>
           <tbody>
-            <tr v-for="room in rooms" :key="room.id">
+            <tr v-for="room in rooms" :key="room.id" class="room-cell">
               <td>
                 <img :src="room.image_url" alt="room" width="100" height="100" />
               </td>
               <td>{{ room.name }}</td>
-              <td>{{ room.capacity }}</td>
+              <td >{{ room.capacity }}</td>
               <td>{{ room.description }}</td>
               <td>
                 <button class="btn-edit" @click="goTodetail(room.id)"><i class="fa-solid fa-info mr-2"></i> ดูข้อมูล</button>
@@ -114,26 +114,51 @@ onMounted(async () => {
   margin: 20px;
 }
 
+.room-cell {
+  text-align: center;
+  vertical-align: middle;
+}
 .table {
   width: 100%;
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0;
+  border-radius: 8px;
+  overflow: hidden;
+  background-color: whitesmoke;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
-th,
-td {
-  padding: 10px;
-  text-align: left;
-  border-bottom: 1px solid #ddd;
+th, td {
+  padding: 16px;
+  vertical-align: middle;
+  border-bottom: 1px solid #eaeaea;
+  font-weight: bold;
 }
 
 th {
-  background-color: #f2f2f2;
+  background-color: #3d3c3c31;
+  color: #13131f;
 }
 
 tr:hover {
-  background-color: #f1f1f1;
-  transition: background-color 0.3s ease;
+  background-color: #fafafa;
 }
+
+img {
+  border-radius: 8px;
+  object-fit: cover;
+}
+
+
+td:last-child {
+  white-space: nowrap;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  align-items: center;
+}
+
 
 img {
   border-radius: 6px;
@@ -147,6 +172,11 @@ button {
   cursor: pointer;
   font-size: 14px;
   color: white;
+  font-weight: bold;
+}
+
+h1{
+  text-decoration: underline;
 }
 
 .btn-create {
@@ -169,6 +199,7 @@ button {
   display: flex;
   justify-content: flex-end; 
   margin-bottom: 20px;
+  
 }
 
 .btn-create:hover {

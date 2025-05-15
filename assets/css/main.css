@@ -10,8 +10,28 @@
   
   /* ใช้ฟอนต์ */
   body {
-    font-family: 'Kanit', sans-serif;
+    font-family: 'Kanit';
     padding-top: 50px;
     padding-left: 20px;
   }
-  
+
+  input[type="text"] {
+    font-family: 'Kanit';
+  }
+
+  button {
+    font-family: 'Kanit';
+    font-weight: bold;
+  }
+
+  input,
+  select,
+  textarea {
+    font-family: 'Kanit';
+  }
+  date-input {
+    font-family: 'Kanit';
+  }
+  search-button {
+    font-family: 'Kanit';
+  }

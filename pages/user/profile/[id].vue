@@ -47,7 +47,7 @@ onMounted(async () => {
         @error="handleImageError" />
       <p class="profile-name">{{ user.first_name }} {{ user.last_name }}</p>
       <p>อีเมล : {{ user.email }}</p>
-      <p>ตำแหน่งงาน : {{ user.position || "—" }}</p>
+      <p>ตำแหน่งงาน : {{ user.position_name || "—" }}</p>
       <!-- <button class="edit-btn">✏️ แก้ไขรูป</button> -->
     </div>
 

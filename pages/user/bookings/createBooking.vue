@@ -155,7 +155,7 @@ const handleCancel = () => {
 
 <template>
   <div class="container">
-    <h2 class="h2">จองห้องประชุม</h2>
+    <h2 class="h2"><i class="fa-solid fa-location-pin mr-2"></i> จองห้องประชุม</h2>
     <form @submit.prevent="handleConfirm" class="booking-form">
       <div class="form-row">
         <div class="form-group">
@@ -206,42 +206,39 @@ const handleCancel = () => {
       <!-- Modal -->
       <div v-if="showMoadal" class="modal-overlay">
         <div class="modal-content">
-          <h3 class="modal-title">🧾 รายละเอียดการจองประชุม</h3>
+          <h3 class="modal-title"><i class="fa-solid fa-circle-info mr-2"></i> รายละเอียดการจองประชุม</h3>
 
           <div class="modal-section">
-            <p><strong>📋 หัวข้อการประชุม:</strong></p>
+            <p><strong><i class="fa-solid fa-handshake mr-2"></i> หัวข้อการประชุม:</strong></p>
             <p class="detail">{{ Booking.title }}</p>
           </div>
 
           <div class="modal-section">
-            <p><strong>📝 รายละเอียดการประชุม:</strong></p>
+            <p><strong><i class="fa-solid fa-circle-info mr-2"></i> รายละเอียดการประชุม:</strong></p>
             <p class="detail">{{ Booking.description }}</p>
           </div>
 
           <div class="modal-section">
-            <p><strong>🕓 วันที่เริ่ม - สิ้นสุด กิจกรรม:</strong></p>
+            <p><strong><i class="fa-solid fa-clock mr-2"></i> วันที่เริ่ม - สิ้นสุด กิจกรรม:</strong></p>
             <p class="detail">
-              {{ dayjs(Booking.start_time).format("DD/MM/YYYY HH:mm") }} น.
-            </p>
-            <p class="detail">
-              {{ dayjs(Booking.end_time).format("DD/MM/YYYY HH:mm") }} น.
+             ตั้งแต่ {{ dayjs(Booking.start_time).format("DD/MM/YYYY HH:mm") }} ถึง {{ dayjs(Booking.end_time).format("DD/MM/YYYY HH:mm") }} น.
             </p>
           </div>
 
           <div class="form-group">
-            <label for="user">ผู้ที่จองห้องประชุม:</label>
+            <label for="user"><i class="fa-solid fa-user mr-2"></i> ผู้ที่จองห้องประชุม:</label>
             <p class="detail">
               {{ user.first_name + " " + user.last_name }}
             </p>
           </div>
 
           <div class="modal-section">
-            <p><strong>📞 เบอร์ติดต่อ:</strong></p>
+            <p><strong><i class="fa-solid fa-phone mr-2"></i> เบอร์ติดต่อ:</strong></p>
             <p class="detail">{{ user.phone }}</p>
           </div>
 
           <div class="modal-section">
-            <p><strong>🏠 ห้องประชุม:</strong></p>
+            <p><strong><i class="fa-solid fa-house mr-2"></i> ห้องประชุม:</strong></p>
             <p class="detail">
               {{
                 roomStore.rooms.find((room) => room.id === Booking.room_id)
@@ -254,7 +251,7 @@ const handleCancel = () => {
             <button @click="handleCreateBooking" class="confirm">
               ยืนยันการจอง
             </button>
-            <button @click="handleCancel" class="cancel">ยกเลิก</button>
+            <button @click="handleCancel" class="cancel"><i class="fa-solid fa-xmark "></i></button>
           </div>
         </div>
       </div>
@@ -264,7 +261,7 @@ const handleCancel = () => {
 
 <style scoped>
 .container {
-  padding: 20px;
+  padding: 25px;
   background-color: #f9f9f9;
   border-radius: 8px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
@@ -274,7 +271,7 @@ const handleCancel = () => {
 
 .h2 {
   color: #13131f;
-  font-size: 24px;
+  font-size: 21px;
   margin-bottom: 20px;
   text-align: center;
   font-weight: bold;
@@ -360,17 +357,21 @@ textarea {
 }
 
 .cancel {
-  background-color: #ff4d4d;
-  color: white;
+  position: absolute;
+  top: 16px;
+  right: 20px;
+  color: #13131f;
   padding: 8px 16px;
   border: none;
   border-radius: 6px;
   cursor: pointer;
+  font-size: 20px;
 }
 
 .cancel:hover {
   background-color: #e63939;
-  transition: background-color 0.3s;
+  color: white;
+  transition: background-color 0.5s;
 }
 
 .modal-overlay {
@@ -378,39 +379,71 @@ textarea {
   top: 0;
   left: 0;
   width: 100%;
-  height: 120%;
+  height: 115%;
   background: rgba(0, 0, 0, 0.5);
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
 .modal-content {
-  background-color: whitesmoke;
-  padding: 24px 32px;
-  border-radius: 12px;
-  color: #13131f;
-  width: 500px;
-  max-width: 90%;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
-  text-align: left;
+  position: relative;
+  background: white;
+  border-radius: 20px;
+  padding: 32px 36px;
+  width: 100%;
+  max-width: 560px;
+  max-height: 85vh;
   overflow-y: auto;
-  max-height: 90vh;
+  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.15);
+  animation: zoomIn 0.3s ease-out;
+  transition: all 0.3s ease;
+  max-height: 80vh;
+  color: #1f2937;
 }
 
 .modal-title {
-  font-size: 20px;
-  font-weight: bold;
-  margin-bottom: 15px;
+  font-size: 18px;
+  font-weight: 700;
   text-align: center;
+  margin-bottom: 24px;
+  color: #111827;
+  letter-spacing: -0.5px;
 }
 
 .modal-section {
-  margin-bottom: 12px;
-  line-height: 1.5;
+  margin-bottom: 20px;
+}
+
+.modal-section strong {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 6px;
+  color: #374151;
 }
 
 .detail {
-  text-indent: 3em;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 12px 16px;
+  color: #374151;
+  font-size: 15px;
+  line-height: 1.6;
+  transition: background 0.2s ease;
+}
+
+.detail:hover {
+  background: #f3f4f6;
 }
 </style>

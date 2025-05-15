@@ -143,7 +143,6 @@ button {
     color: white;
     border: none;
     border-radius: 8px;
-    font-weight: bold;
     font-size: 1rem;
     cursor: pointer;
     transition: background-color 0.3s ease;
@@ -170,7 +169,6 @@ a:hover {
     margin-top: 1rem;
     background-color: transparent;
     color: #4caf50;
-    font-weight: bold;
     border: 2px solid #4caf50;
     border-radius: 8px;
     padding: 0.5rem;
@@ -186,7 +184,6 @@ a:hover {
     margin-top: 1rem;
     background-color: transparent;
     color: #f44336;
-    font-weight: bold;
     border: 2px solid #f44336;
     border-radius: 8px;
     padding: 0.5rem;

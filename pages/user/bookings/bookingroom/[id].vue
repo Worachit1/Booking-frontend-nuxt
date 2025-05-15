@@ -379,6 +379,7 @@ function goToRoomDetail() {
   font-weight: bold;
   margin-bottom: 16px;
   margin-left: 15px;
+  text-decoration: underline;
 }
 
 .sub-header {
@@ -393,6 +394,7 @@ function goToRoomDetail() {
   overflow: hidden;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
   padding-bottom: 10px;
+  margin-top: 10px;
 }
 
 .calendar-footer {
@@ -410,7 +412,6 @@ function goToRoomDetail() {
 .search-button {
   background-color: #4caf50;
   color: white;
-  font-family: Kanit;
   padding: 10px;
   border-radius: 4px;
   cursor: pointer;

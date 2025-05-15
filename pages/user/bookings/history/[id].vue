@@ -25,8 +25,8 @@ const user = ref(null);
 
 const statusMap = {
   Pending: "กำลังรอ...",
-  Approved: "อนุมัติการจองแล้ว",
-  Canceled: "ถูกปฏิเสธ",
+  Approved: "ได้รับอนุมัติการจองแล้ว",
+  Canceled: "ถูกปฏิเสธการจอง",
   Finished: "การจองสิ้นสุดแล้ว",
 };
 
@@ -75,23 +75,19 @@ const openModal = (booking) => {
     </h3>
 
     <!-- ตัวกรองสถานะ -->
-    <div class="mb-3">
-      <label class="form-label">กรองตามสถานะ:</label>
-      <div
-        class="form-check form-check-inline"
-        v-for="status in allStatuses"
-        :key="status"
-      >
+    <div class="status-filter mb-3">
+      <label class="filter-title">กรองตามสถานะ:</label>
+      <div class="status-option" v-for="status in allStatuses" :key="status">
         <input
-          class="form-check-input"
+          class="custom-checkbox"
           type="checkbox"
           :id="status"
           :value="status"
           v-model="selectedStatuses"
         />
-        <label class="form-check-label" :for="status">{{
-          statusMap[status]
-        }}</label>
+        <label class="custom-label" :for="status">
+          {{ statusMap[status] }}
+        </label>
       </div>
     </div>
 
@@ -101,6 +97,7 @@ const openModal = (booking) => {
         <thead class="table-light">
           <tr>
             <th>วัน/เวลาที่จอง</th>
+            <th>ห้องที่จอง</th>
             <th>เวลาเริ่ม</th>
             <th>เวลาสิ้นสุด</th>
             <th>สถานะ</th>
@@ -109,6 +106,7 @@ const openModal = (booking) => {
         <tbody>
           <tr v-for="(booking, index) in filteredBookings" :key="index">
             <td>{{ formatDateTime(booking.created_at) }}</td>
+            <td>{{ booking.room_name }}</td>
             <td>{{ formatDateTime(booking.start_time) }}</td>
             <td>{{ formatDateTime(booking.end_time) }}</td>
             <td>
@@ -133,6 +131,72 @@ const openModal = (booking) => {
   margin: 20px;
 }
 
+.status-filter {
+  padding: 16px;
+  background: #f8f9fa;
+  border: 1px solid #e0e0e0;
+  border-radius: 10px;
+  display: inline-block;
+}
+
+.filter-title {
+  font-weight: bold;
+  margin-bottom: 8px;
+  display: block;
+  color: #333;
+  font-size: 16px;
+}
+
+.status-option {
+  display: inline-flex;
+  align-items: center;
+  margin-right: 16px;
+  margin-bottom: 8px;
+}
+
+.custom-checkbox {
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border: 2px solid #ccc;
+  border-radius: 4px;
+  margin-right: 8px;
+  position: relative;
+  cursor: pointer;
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.custom-checkbox:checked {
+  background-color: #4caf50;
+  border-color: #4caf50;
+}
+
+.custom-checkbox:checked::after {
+  content: "✔";
+  color: white;
+  font-size: 12px;
+  position: absolute;
+  top: 0;
+  left: 3px;
+}
+
+.custom-checkbox:hover {
+  border-color: #999;
+}
+
+.custom-label {
+  cursor: pointer;
+  font-size: 14px;
+  color: #444;
+  user-select: none;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+}
+
 .table {
   width: 100%;
   border-collapse: collapse;
@@ -146,7 +210,9 @@ td {
 }
 
 th {
-  background-color: #f2f2f2;
+  background-color: #3d3c3c31;
+  color: #13131f;
+  font-weight: bold;
 }
 
 tr:hover {

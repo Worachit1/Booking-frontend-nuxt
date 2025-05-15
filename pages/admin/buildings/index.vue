@@ -57,11 +57,7 @@ const createBuilding = async () => {
   await loadBuildings();
 };
 
-// Delete
-const setToDeleteBuilding = (building) => {
-  buildingToDelete.value = building;
-  showDeleteModal.value = true;
-};
+
 
 const deleteBuilding = async () => {
   if (!buildingToDelete.value) return;
@@ -87,6 +83,11 @@ const deleteBuilding = async () => {
   buildingToDelete.value = null;
 };
 
+// Delete
+const setToDeleteBuilding = (building) => {
+  buildingToDelete.value = building;
+  showDeleteModal.value = true;
+};
 
 // helper สำหรับรีเฟรชรายการ
 const refreshBuildings = async () => {
@@ -115,7 +116,7 @@ const closeModals = () => {
 <template>
   <div class="container">
     <div class="header">
-      <h1>แสดงอาคารทั้งหมด</h1>
+      <h1>รายการอาคาร</h1>
       <button class="createbuilding" @click="showModal = true">
         <i class="fa-solid fa-circle-plus mr-2"></i> เพิ่มอาคาร
       </button>
@@ -215,7 +216,9 @@ h1 {
   margin: 0;
   font-size: 28px;
   color: #333;
+  text-decoration: underline;
 }
+
 
 .createbuilding {
   background-color: #39e65e;
@@ -351,6 +354,7 @@ h1 {
   color: white;
   border: none;
   cursor: pointer;
+  font-weight: bold;
 }
 
 .modal-confirm:hover {
@@ -365,6 +369,7 @@ h1 {
   color: white;
   border: none;
   cursor: pointer;
+  font-weight: bold;
 }
 
 .modal-cancel:hover {
