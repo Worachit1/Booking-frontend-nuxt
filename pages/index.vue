@@ -102,7 +102,7 @@ const calendarOptions = computed(() => ({
       </div>`,
     };
   },
-  dayMaxEvents: 2, // แสดงได้แค่ 1 เหตุการณ์ในแต่ละวัน
+  dayMaxEvents: 2, // แสดงได้แค่ 2 เหตุการณ์ในแต่ละวัน
   views: {
     dayGrid: {
       eventLimit: true, // เปิดใช้งาน eventLimit สำหรับ dayGrid
@@ -435,7 +435,7 @@ h2 {
 }
 
 .search-button {
-  background-color: #4caf50;
+  background-color: #13131f;
   color: white;
   padding: 10px;
   border-radius: 4px;
@@ -445,7 +445,7 @@ h2 {
 }
 
 .search-button:hover {
-  background-color: #388e3c;
+  background-color: #4a4a4a;
   transition: background-color 0.3s ease;
 }
 
@@ -535,7 +535,7 @@ h2 {
 }
 
 .booking-button {
-  background-color: #4caf50;
+  background-color: #13131f;
   border: #000 solid 1px;
   color: white;
   padding: 10px 20px;
@@ -548,7 +548,7 @@ h2 {
 }
 
 .booking-button:hover {
-  background-color: #388e3c;
+  background-color: #4a4a4a;
   transition: background-color 0.3s ease;
 }
 
@@ -588,17 +588,17 @@ h2 {
 ::v-deep(.status-pending:hover) {
   background-color: #f0e68c !important;
   transition: background-color 0.3s ease;
+  transform: scale(1.05);
+  transition: transform 0.3s ease;
 }
 
 ::v-deep(.status-approved:hover) {
   background-color: #90ee90 !important;
   transition: background-color 0.3s ease;
+  transform: scale(1.05);
+  transition: transform 0.3s ease;
 }
 
-::v-deep(.status-cancel:hover) {
-  background-color: #f08080 !important;
-  transition: background-color 0.3s ease;
-}
 
 ::v-deep(.fc-button-group) {
   gap: 0.5em;

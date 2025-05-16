@@ -430,7 +430,7 @@ function goToRoomDetail() {
 }
 
 .search-button {
-  background-color: #4caf50;
+  background-color: #13131f;
   color: white;
   padding: 10px;
   border-radius: 4px;
@@ -440,7 +440,7 @@ function goToRoomDetail() {
 }
 
 .search-button:hover {
-  background-color: #388e3c;
+  background-color: #4a4a4a;
   transition: background-color 0.3s ease;
 }
 
@@ -553,7 +553,7 @@ function goToRoomDetail() {
 }
 
 .booking-button {
-  background-color: #4caf50;
+  background-color: #13131f;
   border: #000 solid 1px;
   color: white;
   padding: 10px 20px;
@@ -566,7 +566,7 @@ function goToRoomDetail() {
 }
 
 .booking-button:hover {
-  background-color: #388e3c;
+  background-color: #4a4a4a;
   transition: background-color 0.3s ease;
 }
 

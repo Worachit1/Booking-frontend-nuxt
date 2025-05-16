@@ -178,7 +178,7 @@ h2 {
 }
 
 .btn-orange {
-  background-color: orange;
+  background-color: #13131f;
   color: white;
   border: none;
   padding: 10px 24px;
@@ -190,7 +190,7 @@ h2 {
 }
 
 .btn-orange:hover {
-  background-color: #eeaf67;
+  background-color: #4a4a4a;
   transition: background-color 0.3s ease;
 }
 </style>

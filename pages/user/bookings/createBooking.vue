@@ -336,7 +336,7 @@ textarea {
 
 .create {
   padding: 10px 20px;
-  background-color: #39e65e;
+  background-color: #13131f;
   color: white;
   border: none;
   border-radius: 9px;
@@ -347,7 +347,7 @@ textarea {
 }
 
 .create:hover {
-  background-color: #2b9f3c;
+  background-color: #4a4a4a;
   transition: background-color 0.3s;
 }
 

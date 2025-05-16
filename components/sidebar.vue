@@ -121,12 +121,12 @@ onMounted(async () => {
               <ul v-if="openRoomId === room.room_id" class="dropdown-sub-sub">
                 <li>
                   <router-link :to="`/user/bookings/bookingroom/${room.room_id}`" class="dropdown-sub-item" style="font-size: 12px;">
-                    📋 รายการจอง
+                    รายการจอง
                   </router-link>
                 </li>
                 <li>
                   <router-link :to="`/user/bookings/detailroom/${room.room_id}`" class="dropdown-sub-item" style="font-size: 12px;">
-                    🛠 รายละเอียดห้อง
+                    รายละเอียดห้อง
                   </router-link>
                 </li>
               </ul>
