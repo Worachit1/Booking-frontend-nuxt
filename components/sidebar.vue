@@ -205,6 +205,7 @@ onMounted(async () => {
   padding-left: 20px;
   margin-top: 5px;
   text-decoration: none;
+  animation: fadeIn 0.2s ease-in-out;
 }
 
 .dropdown-item {
@@ -214,6 +215,7 @@ onMounted(async () => {
   cursor: pointer;
   transition: 0.2s;
   text-decoration: none;
+  animation: scaleIn 0.25s ease;
 }
 
 .dropdown-sub-item:hover,
@@ -240,6 +242,7 @@ onMounted(async () => {
   list-style: none;
   padding-left: 15px;
   margin-top: 5px;
+  animation: fadeIn 0.2s ease-in-out;
 }
 
 .dropdown-sub-item {
@@ -249,6 +252,7 @@ onMounted(async () => {
   cursor: pointer;
   transition: 0.2s;
   text-decoration: none;
+  animation: scaleIn 0.25s ease;
 }
 
 

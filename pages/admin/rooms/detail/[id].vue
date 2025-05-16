@@ -1,5 +1,5 @@
 <script setup>
-import { useRoute } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import { useRoomStore } from "@/store/roomStore";
 import { useBuilding_RoomStore } from "@/store/building_roomStore";
 import { ref, onMounted } from "vue";
@@ -8,10 +8,15 @@ definePageMeta({
 });
 
 const route = useRoute();
+const router = useRouter();
 const roomId = route.params.id;
 const roomStore = useRoomStore();
 const buildingRoomStore = useBuilding_RoomStore();
 const buildingRoom = ref(null);
+
+const goToEditRoom = () => {
+    router.push(`/admin/rooms/edit/${roomId}`);
+};
 
 onMounted(async () => {
     try {
@@ -27,26 +32,20 @@ onMounted(async () => {
 
 <template>
     <div class="room-details-container">
-        <!-- แถวบนสุด -->
         <div class="header-row">
             <h1><i class="fa-solid fa-house-chimney mr-2"></i> รายละเอียดห้อง</h1>
-            <h2>ห้อง:{{ buildingRoom?.room_name }} {{ buildingRoom?.building_name ? 'อาคาร:' + buildingRoom.building_name : '' }}</h2>
+            <h3>{{ buildingRoom?.room_name }} &nbsp; {{ buildingRoom?.building_name }}</h3>
         </div>
-
-        <!-- รูปภาพตรงกลาง -->
         <div class="image-container">
             <img :src="buildingRoom?.image_url || '/images/default-room.jpg'" alt="Room Image" width="400px" height="400px"/>
         </div>
-
-        <!-- แถวล่างที่มีรายละเอียด -->
         <div class="info-row">
             <div class="info-box">รายละเอียด : {{ buildingRoom?.description }}</div>
             <div class="info-box">จำนวนที่เข้าได้ : {{ buildingRoom?.capacity }} คน</div>
         </div>
-
-        <!-- ปุ่ม -->
         <div class="button-row">
             <button class="button-calendar" @click="$router.push('/')">ไปยังหน้าปฏิทินการจอง</button>
+            <button class="button-edit" @click="goToEditRoom">แก้ไขข้อมูลห้อง</button>
             <button class="button-back" @click="$router.back()">กลับ</button>
         </div>
     </div>
@@ -65,6 +64,7 @@ onMounted(async () => {
     justify-content: space-between;
     align-items: center;
     margin-bottom: 24px;
+    text-decoration: underline;
 }
 
 .image-container {
@@ -110,6 +110,19 @@ onMounted(async () => {
 }
 .button-calendar:hover {
     background-color: #45a049;
+    transition: background-color 0.3s ease;
+}
+.button-edit {
+    background-color: #008CBA;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+}
+.button-edit:hover {
+    background-color: #007bb5;
     transition: background-color 0.3s ease;
 }
 

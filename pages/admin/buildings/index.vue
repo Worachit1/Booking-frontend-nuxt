@@ -100,17 +100,11 @@ const refreshBuildings = async () => {
 };
 
 
-const confirmAndDelete = async (buildingId) => {
-  await buildingStore.deleteBuilding(buildingId);
-  await loadBuildings();
-  buildingToDelete.value = null;
-  showDeleteModal.value = false;
-};
-
 const closeModals = () => {
   showModal.value = false;
   showDeleteModal.value = false;
 };
+
 </script>
 
 <template>
@@ -322,6 +316,7 @@ h1 {
   align-items: center;
   justify-content: center;
   z-index: 10;
+  animation: fadeIn 0.2s ease-in-out;
 }
 
 .modal {
@@ -338,6 +333,7 @@ h1 {
   padding: 8px;
   border: 1px solid #ccc;
   border-radius: 5px;
+  animation: scaleIn 0.25s ease;
 }
 
 .modal-actions {

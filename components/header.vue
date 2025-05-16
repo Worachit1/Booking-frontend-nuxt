@@ -372,12 +372,14 @@ onUnmounted(() => {
   z-index: 10000;
   color: #e0e0e0;
   margin-right: 25px;
+  animation: fadeIn 0.2s ease-in-out;
 }
 
 .dropdown-menu ul {
   list-style: none;
   margin: 0;
   padding: 0;
+  animation: scaleIn 0.25s ease;
 }
 
 .dropdown-menu li {
@@ -408,6 +410,7 @@ onUnmounted(() => {
   z-index: 10000;
   color: #e0e0e0;
   margin-right: 30px;
+  animation: fadeIn 0.2s ease-in-out;
 }
 
 .bookings-dropdown ul {
@@ -420,7 +423,8 @@ onUnmounted(() => {
   padding: 10px 20px;
   cursor: pointer;
   font-size: 14px;
-  transition: background-color 0.3s ease, color 0.3s ease;
+  transition: background-color 0.3s ease, color 0.3s ease;    
+  animation: scaleIn 0.25s ease;
 }
 
 .bookings-dropdown li:hover {

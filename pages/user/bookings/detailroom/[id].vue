@@ -2,15 +2,10 @@
 import { useRoute } from "vue-router";
 import { useRoomStore } from "@/store/roomStore";
 import { useBuilding_RoomStore } from "@/store/building_roomStore";
-import { useUserStore } from "@/store/userStore"; // ✅ import userStore
-import { ref, onMounted, computed } from "vue";
-
+import { ref, onMounted } from "vue";
 definePageMeta({
-  middleware: ["load-user"]
+  middleware: ["load-user"] // Corrected middleware name
 });
-
-const userStore = useUserStore(); // ✅ ใช้ก่อนสร้าง computed
-const userId = computed(() => userStore.user_id); // ✅ ใช้งานได้แล้ว
 
 const route = useRoute();
 const roomId = route.params.id;
@@ -19,29 +14,28 @@ const buildingRoomStore = useBuilding_RoomStore();
 const buildingRoom = ref(null);
 
 onMounted(async () => {
-  try {
-    console.log("✅ USER ID:", userId.value);
-    await roomStore.getById(roomId);
-    buildingRoom.value = await buildingRoomStore.getByRoomId(roomId);
-    console.log("🏠 Room Details:", buildingRoom.value);
-  } catch (error) {
-    console.error("Error fetching room details:", error);
-  }
+    try {
+        await roomStore.getById(roomId); 
+        // Fetch building room details
+        console.log("Fetching room details for ID:", roomId);
+        buildingRoom.value = await buildingRoomStore.getByRoomId(roomId);
+    } catch (error) {
+        console.error("Error fetching room details:", error);
+    }
 });
 </script>
-
 
 <template>
     <div class="room-details-container">
         <!-- แถวบนสุด -->
         <div class="header-row">
-            <h1>🏠 รายละเอียดห้อง</h1>
+            <h1><i class="fa-solid fa-house-chimney mr-2"></i> รายละเอียดห้อง</h1>
             <h2>ห้อง:{{ buildingRoom?.room_name }} {{ buildingRoom?.building_name ? 'อาคาร:' + buildingRoom.building_name : '' }}</h2>
         </div>
 
         <!-- รูปภาพตรงกลาง -->
         <div class="image-container">
-            <img :src="buildingRoom?.image_url || '/images/default-room.jpg'" alt="Room Image" />
+            <img :src="buildingRoom?.image_url || '/images/default-room.jpg'" alt="Room Image" width="400px" height="400px"/>
         </div>
 
         <!-- แถวล่างที่มีรายละเอียด -->
@@ -53,18 +47,16 @@ onMounted(async () => {
         <!-- ปุ่ม -->
         <div class="button-row">
             <button class="button-calendar" @click="$router.push('/')">ไปยังหน้าปฏิทินการจอง</button>
-            <button class="button-back" @click="$router.back()">กลับ</button>
         </div>
     </div>
 </template>
-
-
 
 <style scoped>
 .room-details-container {
     max-width: 800px;
     margin: 0 auto;
     padding: 20px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 }
 
 .header-row {
@@ -92,7 +84,7 @@ onMounted(async () => {
 }
 
 .info-box {
-    background-color: #f5f5f5;
+    background-color: #eae8e8;
     padding: 12px 20px;
     border-radius: 8px;
     flex: 1;

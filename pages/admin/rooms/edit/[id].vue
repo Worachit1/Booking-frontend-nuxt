@@ -1,54 +1,143 @@
 <script setup>
 import { ref, onMounted } from "vue";
-import { useRoute } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import { useRoomStore } from "~/store/roomStore";
+
 definePageMeta({
-  middleware: ["load-user"] // Corrected middleware name
+  middleware: ["load-user"]
 });
 
+const route = useRoute();
+const router = useRouter();
+const roomId = route.params.id;
+const roomStore = useRoomStore();
 
-
-const route = useRoute(); // ใช้ useRoute แทน window.location.pathname
-const roomId = route.params.id; // รับ ID จาก URL
-const roomStrore = useRoomStore();
 const room = ref(null);
-const editableRoom = ref([]);
+const editableRoom = ref({
+  name: "",
+  description: "",
+  capacity: 0,
+  imageFile: null
+});
+
+const previewImage = ref(null);
+const handleImageUpload = (event) => {
+  const file = event.target.files[0];
+  if (file) {
+    editableRoom.value.imageFile = file;
+    previewImage.value = URL.createObjectURL(file);
+  }
+};
 
 const handleUpdate = async () => {
-    if (!editableRoom.value.name.trim()) {
-        alert("กรุณากรอกชื่อห้อง");
-        return;
-    }
+  if (!editableRoom.value.name?.trim()) {
+    alert("กรุณากรอกชื่อห้อง");
+    return;
+  }
 
-    const data = {
-        name: editableRoom.value.name,
-        description: editableRoom.value.description,
-        capacity: editableRoom.value.capacity,
-        iamge_url: editableRoom.value.iamge_url, 
-    };
+  const formData = new FormData();
+  formData.append("name", editableRoom.value.name || "");
+  formData.append("description", editableRoom.value.description || "");
+  formData.append("capacity", (editableRoom.value.capacity ?? 0).toString());
 
-    await roomStrore.updateRoom(roomId, data);
-    window.location.href = "/rooms"; // นำทางกลับไปที่หน้าห้องทั้งหมด
+  if (editableRoom.value.imageFile) {
+    formData.append("image_url", editableRoom.value.imageFile);
+  }
+
+  const result = await roomStore.updateRoom(roomId, formData);
+  if (result) {
+    alert("อัปเดตข้อมูลห้องเรียบร้อยแล้ว");
+    router.back();
+  } else {
+    alert("เกิดข้อผิดพลาดในการอัปเดต");
+  }
 };
 
 onMounted(async () => {
-    room.value = await roomStrore.getById(roomId);
-    editableRoom.value = { ...room.value }; 
-    
+  room.value = await roomStore.getById(roomId);
+  editableRoom.value = {
+    name: room.value?.name || "",
+    description: room.value?.description || "",
+    capacity: room.value?.capacity || 0,
+    imageFile: null
+  };
+  previewImage.value = room.value?.image_url || null;
 });
 </script>
 
 <template>
-    <div v-if="room">
-        <h2>แก้ไขข้อมูลห้อง</h2>
-        <input type="text" v-model="editableRoom.name" placeholder="ชื่อห้อง" />
-        <input type="text" v-model="editableRoom.description" placeholder="คำอธิบาย" />
-        <input type="number" v-model="editableRoom.capacity" placeholder="ความจุของห้อง" />
-        <button @click="handleUpdate">บันทึกการเปลี่ยนแปลง</button>
+  <div class="container">
+    <h1>แก้ไขข้อมูลห้อง</h1>
+    <div class="form-group">
+      <label for="name">ชื่อห้อง:</label>
+      <input type="text" v-model="editableRoom.name" id="name" />
     </div>
-    <div v-else>
-        <p>กำลังโหลดข้อมูลห้อง...</p>
+    <div class="form-group">
+      <label for="description">รายละเอียด:</label>
+      <textarea v-model="editableRoom.description" id="description"></textarea>
     </div>
+    <div class="form-group">
+      <label for="capacity">จำนวนที่นั่ง:</label>
+      <input type="number" v-model="editableRoom.capacity" id="capacity" />
+    </div>
+    <div class="form-group">
+      <label for="image_upload">อัปโหลดรูปภาพ:</label>
+      <input type="file" id="image_upload" accept="image/*" @change="handleImageUpload" />
+      <div v-if="previewImage" style="margin-top:10px;">
+        <img :src="previewImage" alt="Preview" style="max-width: 100%; max-height: 200px;" />
+      </div>
+    </div>
+    <button @click="handleUpdate" class="btn-comfirm">บันทึกการเปลี่ยนแปลง</button>
+    <button @click="router.back()" class="btn-back">กลับ</button>
+  </div>
 </template>
 
-<style scoped></style>
+<style scoped>
+.container {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 20px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+}
+.form-group {
+    margin-bottom: 15px;
+}
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+}
+.form-group input,
+.form-group textarea {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+button {
+    cursor: pointer;
+      padding: 10px 15px;
+    border: none;
+    font-weight: bold;
+     color: white;
+    border-radius: 4px;
+    margin-left: 10px;;
+}
+
+.btn-comfirm {
+    background-color: #28a745;
+  
+}
+.btn-comfirm:hover {
+    background-color: #218838;
+    transition: border-color 0.3s;
+}
+.btn-back {
+    background-color: #f94c31;
+}
+.btn-back:hover {
+    background-color: #c82333;
+    transition: border-color 0.3s;
+}
+
+</style>
