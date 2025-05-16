@@ -260,14 +260,32 @@ const handleCancel = () => {
 </template>
 
 <style scoped>
+@media (min-width: 1024px) {
+  .modal-content {
+    max-width: 700px;
+    padding: 40px 48px;
+  }
+
+  .container {
+    max-width: 1000px;
+  }
+
+  .create {
+    width: 15%;
+  }
+}
+
 .container {
   padding: 25px;
   background-color: #f9f9f9;
   border-radius: 8px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
   margin: 20px auto;
+  width: 90%;
   max-width: 800px;
 }
+
+
 
 .h2 {
   color: #13131f;
@@ -275,7 +293,7 @@ const handleCancel = () => {
   margin-bottom: 20px;
   text-align: center;
   font-weight: bold;
-  margin-right: 650px;
+  text-align: left;
 }
 
 .booking-form {

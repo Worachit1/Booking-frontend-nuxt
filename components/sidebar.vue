@@ -46,11 +46,7 @@ const toggleRoom = (roomId) => {
 
 
 const isAdmin = computed(() => currentUserRole.value?.[0]?.role_name === "Admin");
-
-
 const isRoleLoaded = ref(false);
-
-
 
 onMounted(async () => {
   await buildingStore.fetchBuildings();
@@ -68,16 +64,22 @@ onMounted(async () => {
 <template>
   <div :class="['sidebar', { open: props.isSidebarOpen }]">
     <button @click="toggleSidebar" class="toggle-btn">
-      <img v-if="!props.isSidebarOpen" src="/public/images/logo_sidebar(2).png" alt="menu"
-        style="width: 30px; height: 30px; object-fit: cover" />
-      <img v-else src="/public/images/sildebar_back.png" alt="back"
-        style="width: 30px; height: 30px; object-fit: cover" />
+     <i
+      v-if="!props.isSidebarOpen"
+      class="fa-solid fa-bars"
+      style="font-size: 24px; color: whitesmoke"
+    ></i>
+      <i
+      v-else
+      class="fa-solid fa-backward"
+      style="font-size: 24px; color: whitesmoke"
+    ></i>
     </button>
 
     <div v-if="props.isSidebarOpen" class="sidebar-content">
       <!-- โลโก้ -->
       <div>
-        <a href="/" class="home-link">
+        <a href="/" class="home-link-header">
           <img src="/public/images/logo_sidebar.png" alt="menu"
             style="width: 100px; height: 100px; object-fit: contain; margin-top: -15%" />
           <span style=" font-size: 16px">BOOKING ROOM</span>
@@ -187,9 +189,25 @@ onMounted(async () => {
   z-index: 1100;
   margin-top: 20%;
 }
+.toggle-btn:hover {
+  transform: scale(1.05);
+  transition: transform 0.3s ease;
+}
 
 .sidebar-content {
   padding: 20px;
+}
+
+.home-link-header {
+  display: block;
+  margin-top: 25px;
+  text-decoration: none;
+  color: #ffffff;
+  font-weight: bold;
+}
+.home-link-header:hover {
+  transform: scale(1.05);
+  transition: transform 0.3s ease;
 }
 
 .home-link {

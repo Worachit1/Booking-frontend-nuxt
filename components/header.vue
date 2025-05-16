@@ -345,7 +345,8 @@ onUnmounted(() => {
 
 .profile-image:hover {
   border: 2px solid #fff;
-  transition: border 0.3s ease;
+  transform: scale(1.05);
+  transition: transform 0.3s ease;
 }
 
 .profile-name {
@@ -355,8 +356,8 @@ onUnmounted(() => {
 }
 
 .profile-name:hover {
-  color: #767474;
-  transition: color 0.3s ease;
+  transform: scale(1.05);
+  transition: transform 0.3s ease;
 }
 
 .dropdown-menu {
