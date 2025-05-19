@@ -164,7 +164,7 @@ onMounted(async () => {
 .sidebar {
   width: 200px;
   background-color: #13131f;
-  height: 150vh;
+  height: 100vh;
   position: fixed;
   left: 0;
   top: 10px;
@@ -179,14 +179,13 @@ onMounted(async () => {
 
 .toggle-btn {
   position: absolute;
-  top: 20px;
+  top: -50px;
   left: 210px;
-  background-color: #13131f;
+  background-color: transparent;
   border: none;
   padding: 10px;
   cursor: pointer;
-  border-radius: 50px;
-  z-index: 1100;
+  z-index: 1100 !important;
   margin-top: 20%;
 }
 .toggle-btn:hover {
@@ -200,7 +199,6 @@ onMounted(async () => {
 
 .home-link-header {
   display: block;
-  margin-top: 25px;
   text-decoration: none;
   color: #ffffff;
   font-weight: bold;

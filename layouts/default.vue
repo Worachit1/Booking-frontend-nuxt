@@ -1,5 +1,5 @@
 <script setup>
-import { ref,onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import Sidebar from '@/components/sidebar.vue'
 import Header from '@/components/header.vue'
 import { useBookingStore } from '@/store/bookingStore'
@@ -21,27 +21,31 @@ onMounted(() => {
 </script>
 
 <template>
-  <Header />
+  <Header class="header" />
   <div class="flex">
     <!-- Sidebar -->
-    <Sidebar 
-      :isSidebarOpen="isSidebarOpen" 
-      @toggleSidebar="toggleSidebar" 
-    />
-    
+    <Sidebar class="sidebar" :isSidebarOpen="isSidebarOpen" @toggleSidebar="toggleSidebar" />
+
     <!-- Main Content -->
-    <div 
-      class="transition-all duration-300 w-full p-4 sidebar" 
-      :style="{ transform: isSidebarOpen ? 'translateX(220px)' : 'translateX(0)' }"
-    >
-      <br><br><slot />
+    <div class="transition-all duration-300 w-full p-4 sidebar"
+      :style="{ transform: isSidebarOpen ? 'translateX(220px)' : 'translateX(0)' }">
+      <br><br>
+      <slot />
     </div>
   </div>
 </template>
 
-<style >
-.sidebar {
-  transition: transform 1.0s ease;
+<style>
+.header {
+  position: relative;
+  /* หรือ absolute/fixed */
+  z-index: 10;
 }
 
+.sidebar {
+  position: absolute;
+  /* ใช้ fixed จะลอยทับเนื้อหาได้ */
+  z-index: 20;
+  transition: transform 1s ease;
+}
 </style>

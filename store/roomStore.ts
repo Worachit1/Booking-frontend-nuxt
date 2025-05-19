@@ -13,10 +13,12 @@ interface Room {
 export const useRoomStore = defineStore("room", {
   state: () => ({
     rooms: [],
+    Loading: false,
   }),
   actions: {
     async fetchRooms() {
       try {
+        this.Loading = true;
         const response = await axios.get(
           `${config.public.apiBase}/api/v1/rooms/list`
         );
@@ -28,10 +30,13 @@ export const useRoomStore = defineStore("room", {
         }
       } catch (error) {
         console.error("Error fetching rooms:", error);
+      } finally {
+        this.Loading = false;
       }
     },
     async getById(room_id: string) {
       try {
+        this.Loading = true;
         const response = await axios.get(
           `${config.public.apiBase}/api/v1/rooms/${room_id}`
         );
@@ -45,10 +50,13 @@ export const useRoomStore = defineStore("room", {
       } catch (error) {
         console.error("Error fetching room:", error);
         return null; // หากเกิดข้อผิดพลาด
+      } finally {
+        this.Loading = false;
       }
     },
     async addRoom(newRoom: Room) {
       try {
+        this.Loading = true;
         const token = localStorage.getItem("token");
         const headers = token ? { Authorization: `Bearer ${token}` } : {};
         const formData = new FormData();
@@ -85,10 +93,13 @@ export const useRoomStore = defineStore("room", {
       } catch (error) {
         console.error("Error adding room:", error);
         return null;
+      } finally {
+        this.Loading = false;
       }
     },
     async updateRoom(id: string, formData: FormData) {
       try {
+        this.Loading = true;
         const token = localStorage.getItem("token");
         const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
@@ -113,10 +124,13 @@ export const useRoomStore = defineStore("room", {
       } catch (error) {
         console.error("Error updating room:", error);
         return null;
+      } finally {
+        this.Loading = false;
       }
     },
     async deleteRoom(id: string) {
       try {
+        this.Loading = true;
         const token = localStorage.getItem("token");
         const headers = token ? { Authorization: `Bearer ${token}` } : {};
         const response = await axios.delete(
@@ -134,6 +148,8 @@ export const useRoomStore = defineStore("room", {
         }
       } catch (error) {
         console.error("Error deleting room:", error);
+      } finally {
+        this.Loading = false;
       }
     },
   },

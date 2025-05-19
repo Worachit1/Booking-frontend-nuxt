@@ -23,6 +23,7 @@ const formatDateTime = (date) => {
 const router = useRouter();
 const bookingStore = useBookingStore();
 const roomStore = useRoomStore();
+const { Loading } = storeToRefs(roomStore);
 
 const rooms = ref([]);
 const selectedRoomId = ref("");
@@ -176,6 +177,7 @@ function goToRoomDetail() {
 
 <template>
   <div class="app-container">
+    <LoadingPage v-if="Loading" class="Loading" />
     <div class="main-content">
       <!-- 🎯 ปฏิทิน -->
       <div class="left-content">
@@ -207,8 +209,8 @@ function goToRoomDetail() {
           <div class="calendar-container">
             <div class="calendar-header-row">
               <div class="header" style="display: flex; align-items: center; gap: 8px; margin-top: 5px;">
-                <i class="fa-solid fa-table-list" style="font-size: 27px;"></i> 
-                  <span>ตารางการจองทั้งหมด</span>
+                <i class="fa-solid fa-table-list" style="font-size: 27px;"></i>
+                <span>ตารางการจองทั้งหมด</span>
               </div>
               <div class="calendar-search">
                 <label for="search-date" style="margin-right: 7px; font-weight: bold">ค้นหาวันที่:</label>
@@ -350,6 +352,7 @@ function goToRoomDetail() {
 .app-container {
   display: flex;
   flex-wrap: wrap;
+  position: relative;
 }
 
 .main-content {
