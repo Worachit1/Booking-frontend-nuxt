@@ -29,7 +29,7 @@ onMounted(async () => {
     <div class="room-details-container">
         <!-- แถวบนสุด -->
         <div class="header-row">
-            <h1><i class="fa-solid fa-house-chimney mr-2"></i> รายละเอียดห้อง</h1>
+            <h1><i class="fa-solid fa-house-chimney "></i> รายละเอียดห้อง</h1>
             <h2>ห้อง:{{ buildingRoom?.room_name }} {{ buildingRoom?.building_name ? 'อาคาร:' + buildingRoom.building_name : '' }}</h2>
         </div>
 

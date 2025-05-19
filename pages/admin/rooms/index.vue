@@ -69,12 +69,12 @@ onMounted(async () => {
 <template>
   <div class="container">
     <div class="header-row">
-      <h1><i class="fa-solid fa-house-chimney mr-2"></i> รายการห้องประชุม</h1>
+      <h1><i class="fa-solid fa-house-chimney "></i> รายการห้องประชุม</h1>
       <button
         class="btn-create"
         @click="router.push('/admin/rooms/createRoom')"
       >
-        <i class="fa-solid fa-circle-plus mr-2"></i> เพิ่มห้อง
+        <i class="fa-solid fa-circle-plus "></i> เพิ่มห้อง
       </button>
     </div>
 
@@ -98,10 +98,10 @@ onMounted(async () => {
           <td>{{ room.description }}</td>
           <td>
             <button class="btn-detail" @click="goTodetail(room.id)">
-              <i class="fa-solid fa-info mr-2"></i> ดูข้อมูล
+              <i class="fa-solid fa-info "></i> ดูข้อมูล
             </button>
             <button class="btn-cancel" @click="handleDeleteRoom(room.id)">
-              <i class="fa-solid fa-trash-can mr-2"></i> ลบ
+              <i class="fa-solid fa-trash-can "></i> ลบ
             </button>
           </td>
         </tr>

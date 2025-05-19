@@ -213,7 +213,10 @@ function goToRoomDetail() {
       <!-- 🎯 ปฏิทิน -->
       <div class="left-content">
         <div class="header-calendar">
-          <div class="header">ปฏิทินการจอง</div>
+         <div class="header" style="display: flex; align-items: center; gap: 8px;">
+              <i class="fa-solid fa-calendar-days" style="font-size: 27px;"></i>
+              <span>ปฏิทินการจอง</span>
+            </div>
           <div class="room-search">
             <label for="room-select" style="margin-right: 7px; font-weight: bold;">เลือกห้อง:</label>
             <select v-model="selectedRoomId" id="room-select" class="date-input" style="margin-right: 10px">
@@ -224,22 +227,24 @@ function goToRoomDetail() {
               </option>
             </select>
             <button class="search-button" @click="goToRoomDetail" :disabled="!selectedRoomId">
-              <i class="fa-solid fa-magnifying-glass mr-2"></i> ค้นหาห้อง
+              <i class="fa-solid fa-magnifying-glass "></i> ไปยังห้องที่เลือก
             </button>
           </div>
         </div>
 
 
-
         <!-- 📅 ปฏิทิน -->
         <div class="calendar-container">
           <div class="calendar-header-row">
-            <div class="header">ตารางการจอง ของห้อง: {{ roomName }}</div>
+            <div class="header" style="display: flex; align-items: center; gap: 8px;">
+                <i class="fa-solid fa-table-list" style="font-size: 27px;"></i> 
+                  <span>ตารางการจอง ของห้อง: {{ roomName }}</span>
+              </div>
             <div class="calendar-search">
               <label for="search-date" style="margin-right: 7px; font-weight: bold;">ค้นหาวันที่:</label>
               <input type="date" v-model="searchDate" class="date-input" />
               <button @click="goToDate" class="search-button">
-                <i class="fa-solid fa-magnifying-glass mr-2"></i> ค้นหา
+                <i class="fa-solid fa-magnifying-glass "></i> ไปยังวันที่เลือก
               </button>
             </div>
           </div>
@@ -248,7 +253,7 @@ function goToRoomDetail() {
 
           <div class="calendar-footer">
             <a class="booking-button" href="/user/bookings/createBooking">
-              <i class="fa-solid fa-circle-plus mr-2"></i> จองห้อง
+              <i class="fa-solid fa-circle-plus "></i> จองห้อง
             </a>
           </div>
         </div>
@@ -259,7 +264,7 @@ function goToRoomDetail() {
         <!-- 📌 วันนี้ -->
         <div class="today-bookings">
           <h2>
-            <i class="fa-brands fa-pinterest mr-2" style="color: crimson"></i>
+            <i class="fa-brands fa-pinterest " style="color: crimson"></i>
             ตารางการจองวันนี้ ({{
               dayjs(date, "YYYY-MM-DD").locale("th").format("D MMMM YYYY")
             }})
@@ -332,7 +337,7 @@ function goToRoomDetail() {
     <!-- 🔥 Popup -->
     <div v-if="popupVisible" class="popup-wrapper">
       <div class="popup-content">
-        <div class="popup-header"> <i class="fa-brands fa-pinterest mr-2" style="color: crimson"></i> {{
+        <div class="popup-header"> <i class="fa-brands fa-pinterest " style="color: crimson"></i> {{
           selectedEvent?.title }}</div>
         <div class="popup-body">
           <p><strong>รายละเอียด:</strong> {{ selectedEvent?.extendedProps?.description }}</p>
@@ -677,4 +682,5 @@ function goToRoomDetail() {
     margin-top: 10px;
   }
 }
+
 </style>

@@ -99,7 +99,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <h1 style="margin-left: 5px;"><i class="fa-solid fa-book-open mr-2"></i> รายการจองห้องประชุม</h1>
+  <h1 style="margin-left: 5px;"><i class="fa-solid fa-book-open "></i> รายการจองห้องประชุม</h1>
   <div class="container">
     <div class="row">
       <div class="col-md-12">
@@ -230,8 +230,8 @@ h1 {
 }
 
 .custom-checkbox:checked {
-  background-color: #4caf50;
-  border-color: #4caf50;
+  background-color: #13131f;
+  border-color: #13131f;
 }
 
 .custom-checkbox:checked::after {

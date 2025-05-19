@@ -135,7 +135,8 @@ const handleCreateBooking = async () => {
         approved_by: null,
         status: "Pending",
       };
-      showMoadal.value = false;; 
+      showMoadal.value = false;
+      navigateTo("/"); 
     } else {
       alert("❌ ไม่สามารถสร้างการจองได้");
     }
@@ -155,7 +156,7 @@ const handleCancel = () => {
 
 <template>
   <div class="container">
-    <h2 class="h2"><i class="fa-solid fa-location-pin mr-2"></i> จองห้องประชุม</h2>
+    <h2 class="h2"><i class="fa-solid fa-location-pin "></i> จองห้องประชุม</h2>
     <form @submit.prevent="handleConfirm" class="booking-form">
       <div class="form-row">
         <div class="form-group">
@@ -200,45 +201,45 @@ const handleCancel = () => {
       </div>
 
       <button type="submit" class="create">
-        <i class="fa-solid fa-circle-plus mr-2"></i> สร้างการจอง
+        <i class="fa-solid fa-circle-plus "></i> สร้างการจอง
       </button>
 
       <!-- Modal -->
       <div v-if="showMoadal" class="modal-overlay">
         <div class="modal-content">
-          <h3 class="modal-title"><i class="fa-solid fa-circle-info mr-2"></i> รายละเอียดการจองประชุม</h3>
+          <h3 class="modal-title"><i class="fa-solid fa-circle-info "></i> รายละเอียดการจองประชุม</h3>
 
           <div class="modal-section">
-            <p><strong><i class="fa-solid fa-handshake mr-2"></i> หัวข้อการประชุม:</strong></p>
+            <p><strong><i class="fa-solid fa-handshake "></i> หัวข้อการประชุม:</strong></p>
             <p class="detail">{{ Booking.title }}</p>
           </div>
 
           <div class="modal-section">
-            <p><strong><i class="fa-solid fa-circle-info mr-2"></i> รายละเอียดการประชุม:</strong></p>
+            <p><strong><i class="fa-solid fa-circle-info "></i> รายละเอียดการประชุม:</strong></p>
             <p class="detail">{{ Booking.description }}</p>
           </div>
 
           <div class="modal-section">
-            <p><strong><i class="fa-solid fa-clock mr-2"></i> วันที่เริ่ม - สิ้นสุด กิจกรรม:</strong></p>
+            <p><strong><i class="fa-solid fa-clock "></i> วันที่เริ่ม - สิ้นสุด กิจกรรม:</strong></p>
             <p class="detail">
              ตั้งแต่ {{ dayjs(Booking.start_time).format("DD/MM/YYYY HH:mm") }} ถึง {{ dayjs(Booking.end_time).format("DD/MM/YYYY HH:mm") }} น.
             </p>
           </div>
 
           <div class="form-group">
-            <label for="user"><i class="fa-solid fa-user mr-2"></i> ผู้ที่จองห้องประชุม:</label>
+            <label for="user"><i class="fa-solid fa-user "></i> ผู้ที่จองห้องประชุม:</label>
             <p class="detail">
               {{ user.first_name + " " + user.last_name }}
             </p>
           </div>
 
           <div class="modal-section">
-            <p><strong><i class="fa-solid fa-phone mr-2"></i> เบอร์ติดต่อ:</strong></p>
+            <p><strong><i class="fa-solid fa-phone "></i> เบอร์ติดต่อ:</strong></p>
             <p class="detail">{{ user.phone }}</p>
           </div>
 
           <div class="modal-section">
-            <p><strong><i class="fa-solid fa-house mr-2"></i> ห้องประชุม:</strong></p>
+            <p><strong><i class="fa-solid fa-house "></i> ห้องประชุม:</strong></p>
             <p class="detail">
               {{
                 roomStore.rooms.find((room) => room.id === Booking.room_id)

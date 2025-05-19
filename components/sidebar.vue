@@ -89,12 +89,12 @@ onMounted(async () => {
 
       <!-- หน้าหลัก -->
       <a href="/" class="home-link">
-        <i class="fas fa-home mr-2"></i> หน้าหลัก
+        <i class="fas fa-home  "></i> หน้าหลัก
       </a>
 
       <!-- เลือกห้อง Dropdown -->
       <div class="home-link" @click="isRoomDropdownOpen = !isRoomDropdownOpen" style="cursor: pointer">
-        <i class="fas fa-map-pin mr-2"></i> เลือกห้อง
+        <i class="fas fa-map-pin  "></i> เลือกห้อง
         <i :class="isRoomDropdownOpen ? 'fas fa-chevron-up ml-2' : 'fas fa-chevron-down ml-2'"></i>
       </div>
 
@@ -102,7 +102,7 @@ onMounted(async () => {
       <ul v-if="isRoomDropdownOpen" class="dropdown-list">
         <li v-for="b in buildings" :key="b.id" class="dropdown-item">
           <div class="building-name" @click="openBuildingId = openBuildingId === b.id ? null : b.id">
-            <i class="fa-solid fa-building mr-2"></i> {{ b.name }}
+            <i class="fa-solid fa-building  "></i> {{ b.name }}
             <i :class="openBuildingId === b.id
               ? 'fas fa-chevron-up'
               : 'fas fa-chevron-down'
@@ -113,7 +113,7 @@ onMounted(async () => {
             <li v-for="room in filteredRooms(b.id)" :key="room.building_room_id" class="dropdown-sub-item">
               <!-- ชั้นแรก: ชื่อห้องที่กดเพื่อเปิด dropdown -->
               <div @click="toggleRoom(room.room_id)" class="room-link" style="cursor: pointer;">
-                <i class="fa-solid fa-archway mr-2"></i> {{ room.room_name }}
+                <i class="fa-solid fa-archway  "></i> {{ room.room_name }}
                 <i :class="openRoomId === room.room_id ? 'fas fa-chevron-up ml-1' : 'fas fa-chevron-down ml-1'"></i>
               </div>
 
@@ -136,24 +136,24 @@ onMounted(async () => {
       </ul>
 
       <a href="/user/bookings/createBooking" class="home-link">
-        <i class="fas fa-edit mr-2"></i> จองห้องประชุม
+        <i class="fas fa-edit  "></i> จองห้องประชุม
       </a>
 
       <!-- เฉพาะ Admin  เท่านั้น -->
       <div v-if="isRoleLoaded && isAdmin">
         <a href="/admin/buildings" class="home-link">
-          <i class="fa-solid fa-pen-nib mr-2"></i> จัดการอาคาร
+          <i class="fa-solid fa-pen-nib  "></i> จัดการอาคาร
         </a>
         <a href="/admin/rooms" class="home-link">
-          <i class="fa-solid fa-pen-nib mr-2"></i> จัดการห้อง
+          <i class="fa-solid fa-pen-nib  "></i> จัดการห้อง
         </a>
         <a href="/admin/bookings" class="home-link">
-          <i class="fas fa-receipt mr-2"></i> รายการจองห้อง
+          <i class="fas fa-receipt  "></i> รายการจองห้อง
         </a>
       </div>
       <div v-else>
         <a :href="`/user/bookings/history/${userId}`" class="home-link">
-          <i class="fas fa-history mr-2"></i> ประวัติการจอง
+          <i class="fas fa-history  "></i> ประวัติการจอง
         </a>
       </div>
     </div>

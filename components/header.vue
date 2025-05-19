@@ -265,18 +265,18 @@ onUnmounted(() => {
         <ul>
           <template v-if="isLoggedIn">
             <li @click="viewProfile">
-              <i class="fa-solid fa-address-card mr-2"></i> ดูโปรไฟล์
+              <i class="fa-solid fa-address-card "></i> ดูโปรไฟล์
             </li>
             <li @click="logout">
-              <i class="fa-solid fa-right-from-bracket mr-2"></i> ออกจากระบบ
+              <i class="fa-solid fa-right-from-bracket "></i> ออกจากระบบ
             </li>
           </template>
           <template v-else>
             <li @click="openLoginModal">
-              <i class="fa-solid fa-user mr-2"></i> เข้าสู่ระบบ
+              <i class="fa-solid fa-user   "></i> เข้าสู่ระบบ
             </li>
             <li @click="openRegisterModal">
-              <i class="fa-solid fa-user-plus mr-2"></i> สมัครสมาชิก
+              <i class="fa-solid fa-user-plus   "></i> สมัครสมาชิก
             </li>
           </template>
         </ul>

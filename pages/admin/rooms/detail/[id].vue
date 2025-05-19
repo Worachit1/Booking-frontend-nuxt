@@ -33,7 +33,7 @@ onMounted(async () => {
 <template>
     <div class="room-details-container">
         <div class="header-row">
-            <h1><i class="fa-solid fa-house-chimney mr-2"></i> รายละเอียดห้อง</h1>
+            <h1><i class="fa-solid fa-house-chimney "></i> รายละเอียดห้อง</h1>
             <h3>{{ buildingRoom?.room_name }} &nbsp; {{ buildingRoom?.building_name }}</h3>
         </div>
         <div class="image-container">

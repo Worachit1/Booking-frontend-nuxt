@@ -112,7 +112,7 @@ const closeModals = () => {
     <div class="header">
       <h1>รายการอาคาร</h1>
       <button class="createbuilding" @click="showModal = true">
-        <i class="fa-solid fa-circle-plus mr-2"></i> เพิ่มอาคาร
+        <i class="fa-solid fa-circle-plus "></i> เพิ่มอาคาร
       </button>
     </div>
 
@@ -136,14 +136,14 @@ const closeModals = () => {
                     v-if="!b.isEditing"
                     @click="startEdit(index)"
                   >
-                  <i class="fa-solid fa-pen-to-square mr-2"></i>แก้ไข
+                  <i class="fa-solid fa-pen-to-square "></i>แก้ไข
                   </button>
                   <button class="confirm" v-else @click="saveEdit(b.id, index)">
-                    <i class="fa-solid fa-check mr-2"></i> บันทึก
+                    <i class="fa-solid fa-check "></i> บันทึก
                   </button>
 
                   <button @click="setToDeleteBuilding(b)" class="delete">
-                    <i class="fa-solid fa-trash-can mr-2"></i> ลบ
+                    <i class="fa-solid fa-trash-can "></i> ลบ
                   </button>
                 </div>
               </div>

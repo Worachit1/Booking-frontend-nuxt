@@ -71,7 +71,7 @@ const openModal = (booking) => {
 <template>
   <div class="container my-5">
     <h2 class="mb-2">
-      <i class="fas fa-calendar-check me-2"></i> ประวัติการจองของคุณ
+      <i class="fa-solid fa-clock-rotate-left "></i> ประวัติการจองของคุณ
     </h2>
 
     <!-- ตัวกรองสถานะ -->
@@ -171,8 +171,8 @@ const openModal = (booking) => {
 }
 
 .custom-checkbox:checked {
-  background-color: #4caf50;
-  border-color: #4caf50;
+  background-color: #13131f;
+  border-color: #13131f;
 }
 
 .custom-checkbox:checked::after {
