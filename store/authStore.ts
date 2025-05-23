@@ -1,27 +1,21 @@
 import axios from "axios";
 import { defineStore } from "pinia";
 
+import type { User } from "@/models/user.model";
+
 const config = useRuntimeConfig();
 
-interface User {
-    id?: string;
-    first_name: string;
-    last_name: string;
-    email: string;
-    password: string;
-    position_name: string;
-    phone: string;
-    image_url: File | string;
-    token?: string;
-}
+
 
 export const useAuthStore = defineStore("auth", {
     state: () => ({
         user: null as User | null,
+        isLoading: false,
         token: null as string | null,
     }),
     actions: {
         async login(payload: { email: string; password: string }) {
+            this.isLoading = true;
             try {
                 console.log("Login Payload:", payload);
 
@@ -43,21 +37,18 @@ export const useAuthStore = defineStore("auth", {
                 // จัดเก็บ token ใน localStorage ถ้าต้องการให้ใช้ใน session ถัดไป
                 localStorage.setItem("token", token);
                 localStorage.setItem("user_id", user.id);
-                localStorage.setItem("user_email", user.email);
-                localStorage.setItem("user_first_name", user.first_name);
-                localStorage.setItem("user_last_name", user.last_name);
-                localStorage.setItem("user_image_url", user.image_url);
-                localStorage.setItem("user_position", user.position_id); 
 
                 this.user = user;
                 this.token = token;
 
-                localStorage.setItem("token", token);
-                console.log("Token saved to localStorage:", token);
+                // localStorage.setItem("token", token);
+                // console.log("Token saved to localStorage:", token);
                 return user;
             } catch (error: any) {
                 console.error("Login error:", error);
                 throw new Error(error.response?.data?.message || "เข้าสู่ระบบไม่สำเร็จ");
+            }finally{
+                this.isLoading = false;
             }
         },
         async logout() {
@@ -115,7 +106,7 @@ export const useAuthStore = defineStore("auth", {
                 );
 
                 if (response.status === 200 && response.data.data) {
-                    console.log("User registered:", response.data.data);
+                    // console.log("User registered:", response.data.data);
                     return response.data.data;
                 } else {
                     console.error("Registration failed:", response.statusText);

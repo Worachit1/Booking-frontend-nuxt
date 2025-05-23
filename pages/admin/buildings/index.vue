@@ -1,7 +1,12 @@
 <script setup>
-import { onMounted, ref } from "vue";
+import { ref, onMounted } from "vue";
+import Swal from "sweetalert2";
+import "sweetalert2/dist/sweetalert2.min.css";
+
+import LoadingPage from "@/components/Loading.vue";
+
+
 import { useBuildingStore } from "@/store/buildingStore";
-import { useBookingStore } from "@/store/bookingStore";
 import { useBuilding_RoomStore } from "~/store/building_roomStore";
 
 definePageMeta({
@@ -10,21 +15,18 @@ definePageMeta({
 
 // Store
 const buildingStore = useBuildingStore();
+const { isLoading } = storeToRefs(buildingStore);
 const buildingRoomStore = useBuilding_RoomStore();
 
-// State
-const buildings = ref([]);
+// Local state for editing, modal and new building name
 const editableBuildings = ref([]);
 const showModal = ref(false);
-const showDeleteModal = ref(false);
 const newBuildingName = ref("");
-const buildingToDelete = ref(null);
 
-// Fetch and setup
+// โหลดข้อมูลอาคารมาแปลงใส่ editableBuildings เพื่อให้แก้ไขชื่อได้
 const loadBuildings = async () => {
   await buildingStore.fetchBuildings();
-  buildings.value = buildingStore.buildings;
-  editableBuildings.value = buildings.value.map((b) => ({
+  editableBuildings.value = buildingStore.buildings.map((b) => ({
     ...b,
     isEditing: false,
   }));
@@ -32,87 +34,109 @@ const loadBuildings = async () => {
 
 onMounted(loadBuildings);
 
-// Edit
+const createBuilding = async () => {
+  const name = newBuildingName.value.trim();
+  if (!name) {
+    Swal.fire("แจ้งเตือน", "กรุณากรอกชื่ออาคาร", "warning");
+    return;
+  }
+  buildingStore.isLoading = true;
+  await buildingStore.addBuilding({ name });
+  newBuildingName.value = "";
+  Swal.fire({
+    title: "เพิ่มอาคารใหม่เรียบร้อย",
+    icon: "success",
+    confirmButtonText: "ตกลง",
+    customClass: {
+      popup: "my-popup",
+      confirmButton: "btn-ok",
+    },
+  });
+  showModal.value = false;
+  await loadBuildings();
+  buildingStore.isLoading = false;
+};
+
 const startEdit = (index) => {
   editableBuildings.value[index].isEditing = true;
 };
 
 const saveEdit = async (id, index) => {
   const updated = { name: editableBuildings.value[index].name };
+  buildingStore.isLoading = true;
   await buildingStore.updateBuilding(id, updated);
   editableBuildings.value[index].isEditing = false;
-  await loadBuildings(); // Refresh
+  await loadBuildings();
+  buildingStore.isLoading = false;
 };
 
-// Create
-const createBuilding = async () => {
-  const name = newBuildingName.value.trim();
-  if (!name) {
-    alert("กรุณากรอกชื่ออาคาร");
+const deleteBuilding = async (building) => {
+  await buildingRoomStore.fetchBuilding_Rooms();
+  const buildingRooms = buildingRoomStore.building_rooms.filter(
+    (br) => br.building_id === building.id
+  );
+  if (buildingRooms.length > 0) {
+    Swal.fire({
+      title: "ไม่สามารถลบได้",
+      text: "เนื่องจากมีห้องอยู่ในอาคารนี้ กรุณาลบห้องก่อน",
+      icon: "error",
+      confirmButtonText: "ตกลง",
+      customClass: {
+        popup: "my-popup",
+        confirmButton: "btn-ok",
+      },
+    });
     return;
   }
-  await buildingStore.addBuilding({ name });
-  newBuildingName.value = "";
-  showModal.value = false;
+  const result = await Swal.fire({
+    title: `คุณต้องการลบอาคาร <br>"${building.name}" ใช่ไหม?`,
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonText: "ลบ",
+    cancelButtonText: "ยกเลิก",
+    reverseButtons: true,
+    customClass: {
+      popup: "my-popup",
+      confirmButton: "btn-confirm",
+      cancelButton: "btn-cancel",
+    },
+  });
+  if (!result.isConfirmed) return;
+  buildingStore.isLoading = true;
+  await buildingStore.deleteBuilding(building.id);
   await loadBuildings();
+  buildingStore.isLoading = false;
+  await Swal.fire({
+    title: "ลบแล้ว! อาคารถูกลบเรียบร้อย",
+    icon: "success",
+    confirmButtonText: "ตกลง",
+    customClass: {
+      popup: "my-popup",
+      confirmButton: "btn-ok",
+    },
+  });
+return;
+
 };
-
-
-
-const deleteBuilding = async () => {
-  if (!buildingToDelete.value) return;
-
-  const buildingId = buildingToDelete.value.id;
-
-  // ดึงห้องในอาคารนั้น
-  let roomsInBuilding = await buildingRoomStore.getRoomsByBuildingId(buildingId);
-  if (!Array.isArray(roomsInBuilding)) {
-    roomsInBuilding = [];
-  }
-
-  // ถ้าไม่มีห้องเลย → ลบได้
-  if (roomsInBuilding.length === 0) {
-    await buildingStore.deleteBuilding(buildingId);
-    await refreshBuildings();
-  } else {
-    alert("ไม่สามารถลบอาคารนี้ได้ เนื่องจากยังมีห้องอยู่ในอาคาร");
-  }
-
-  // ปิด modal และ reset state
-  showDeleteModal.value = false;
-  buildingToDelete.value = null;
-};
-
-// Delete
-const setToDeleteBuilding = (building) => {
-  buildingToDelete.value = building;
-  showDeleteModal.value = true;
-};
-
-// helper สำหรับรีเฟรชรายการ
-const refreshBuildings = async () => {
-  await buildingStore.fetchBuildings();
-  buildings.value = buildingStore.buildings;
-  editableBuildings.value = buildings.value.map((b) => ({
-    ...b,
-    isEditing: false,
-  }));
-};
-
 
 const closeModals = () => {
   showModal.value = false;
-  showDeleteModal.value = false;
+  newBuildingName.value = "";
 };
-
 </script>
 
 <template>
+  <teleport to="body"> 
+    <LoadingPage v-if="isLoading" />
+  </teleport>
+  <div v-if="buildingStore.isLoading" class="loading-overlay">
+    <div class="loader"></div>
+  </div>
   <div class="container">
     <div class="header">
       <h1>รายการอาคาร</h1>
       <button class="createbuilding" @click="showModal = true">
-        <i class="fa-solid fa-circle-plus "></i> เพิ่มอาคาร
+        <i class="fa-solid fa-circle-plus"></i> เพิ่มอาคาร
       </button>
     </div>
 
@@ -121,6 +145,7 @@ const closeModals = () => {
         <thead>
           <tr>
             <th>ชื่ออาคาร</th>
+            <th>การดำเนินการ</th>
           </tr>
         </thead>
         <tbody>
@@ -130,22 +155,20 @@ const closeModals = () => {
             </td>
             <td>
               <div class="action-buttons">
-                <div style="display: flex; align-items: center">
-                  <button
-                    class="edit"
-                    v-if="!b.isEditing"
-                    @click="startEdit(index)"
-                  >
-                  <i class="fa-solid fa-pen-to-square "></i>แก้ไข
-                  </button>
-                  <button class="confirm" v-else @click="saveEdit(b.id, index)">
-                    <i class="fa-solid fa-check "></i> บันทึก
-                  </button>
+                <button
+                  class="edit"
+                  v-if="!b.isEditing"
+                  @click="startEdit(index)"
+                >
+                  <i class="fa-solid fa-pen-to-square"></i> แก้ไข
+                </button>
+                <button class="confirm" v-else @click="saveEdit(b.id, index)">
+                  <i class="fa-solid fa-check"></i> บันทึก
+                </button>
 
-                  <button @click="setToDeleteBuilding(b)" class="delete">
-                    <i class="fa-solid fa-trash-can "></i> ลบ
-                  </button>
-                </div>
+                <button @click="deleteBuilding(b)" class="delete">
+                  <i class="fa-solid fa-trash-can"></i> ลบ
+                </button>
               </div>
             </td>
           </tr>
@@ -156,9 +179,10 @@ const closeModals = () => {
     <div v-else>
       <p>ยังไม่ได้เพิ่มอาคาร</p>
     </div>
+  </div>
 
-    <!-- showModal เพิ่อที่จะเพิ่มอาคารหรือ จะลบอาคาร-->
-    <div v-if="showModal || showDeleteModal" class="modal-overlay">
+  <teleport to="body">
+    <div v-if="showModal" class="modal-overlay">
       <div class="modal">
         <template v-if="showModal">
           <h3>เพิ่มอาคารใหม่</h3>
@@ -174,114 +198,119 @@ const closeModals = () => {
             <button @click="closeModals" class="modal-cancel">ยกเลิก</button>
           </div>
         </template>
-
-        <template v-else-if="showDeleteModal">
-          <h3>คุณแน่ใจหรือไม่ที่จะลบ "{{ buildingToDelete?.name }}" ?</h3>
-          <div class="modal-actions">
-            <button @click="deleteBuilding" class="modal-confirm">
-              ยืนยัน
-            </button>
-            <button @click="closeModals" class="modal-cancel">ยกเลิก</button>
-          </div>
-        </template>
       </div>
     </div>
-  </div>
+  </teleport>
 </template>
 
 <style scoped>
 .container {
-  padding: 20px;
+  padding: 5vw 4vw;
   background-color: #f9f9f9;
   border-radius: 8px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  margin: 20px auto;
-  max-width: 1180px;
+  margin: 5vw auto;
+  max-width: 1000px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .header {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  flex-direction: column;
+  gap: 12px;
+  justify-content: center;
+  align-items: flex-start;
   margin-bottom: 20px;
+}
+
+@media (min-width: 640px) {
+  .header {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+  }
 }
 
 h1 {
   margin: 0;
-  font-size: 28px;
+  font-size: 6vw;
   color: #333;
   text-decoration: underline;
 }
 
+@media (min-width: 640px) {
+  h1 {
+    font-size: 28px;
+  }
+}
 
 .createbuilding {
   background-color: #13131f;
   color: white;
-  border: none;
+  border: 1px solid #13131f;
   padding: 10px 20px;
-  cursor: pointer;
   border-radius: 5px;
   display: flex;
   align-items: center;
   font-size: 16px;
   font-weight: bold;
-  gap: 5px;
+  gap: 8px;
+  cursor: pointer;
   transition: background-color 0.3s;
-  border: 1px solid #13131f;
 }
 
 .createbuilding:hover {
   background-color: #4a4a4a;
-  transition: background-color 0.3s ease;
 }
 
 .building-table {
   width: 100%;
   border-collapse: collapse;
+  word-break: break-word;
 }
 
 .building-table th,
 .building-table td {
-  padding: 12px 15px;
+  padding: 12px 8px;
   text-align: left;
+  vertical-align: middle;
 }
 
 .building-table input[type="text"] {
-  width: 20%;
-  padding: 6px;
+  width: 50%;
+  padding: 8px;
   border: 1px solid #ccc;
   border-radius: 4px;
+  font-size: 16px;
 }
 
 .action-buttons {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
-  margin-left: -710px;
-  width: 125%;
-  height: 100%; 
 }
 
 .edit,
 .confirm,
 .delete {
-  padding: 6px 12px;
+  padding: 8px 12px;
   border: none;
   border-radius: 5px;
   cursor: pointer;
   font-weight: bold;
-  margin-right: 5px;
-  border: 1px solid #13131f;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .edit {
   background-color: #00b7ff;
   color: white;
-  margin-right: 10px;
 }
 
 .edit:hover {
   background-color: #0088cc;
-  transition: background-color 0.3s ease;
 }
 
 .confirm {
@@ -291,7 +320,6 @@ h1 {
 
 .confirm:hover {
   background-color: #cc9a00;
-  transition: background-color 0.3s ease;
 }
 
 .delete {
@@ -301,75 +329,101 @@ h1 {
 
 .delete:hover {
   background-color: #cc0000;
-  transition: background-color 0.3s ease;
 }
 
-/* Modal */
 .modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(151, 150, 150, 0.142);
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.4);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 10;
-  animation: fadeIn 0.2s ease-in-out;
+  z-index: 500;
+  backdrop-filter: blur(3px);
 }
 
 .modal {
-  background: white;
-  padding: 20px;
-  border-radius: 8px;
-  width: 300px;
+  background: #ffffff;
+  padding: 30px 40px;
+  border-radius: 12px;
+  width: 90vw;
+  max-width: 400px;
+  box-shadow: 0 12px 25px rgba(0, 0, 0, 0.2);
+  animation: scaleFadeIn 0.3s ease forwards;
+  transform-origin: center;
+  box-sizing: border-box;
+}
+
+.modal h3 {
+  margin-bottom: 20px;
+  font-size: 22px;
+  font-weight: bold;
   text-align: center;
+  color: #333;
 }
 
 .modal input {
-  width: 40%;
-  margin-top: 10px;
-  padding: 8px;
+  width: 100%;
+  padding: 10px 14px;
   border: 1px solid #ccc;
-  border-radius: 5px;
-  animation: scaleIn 0.25s ease;
+  border-radius: 6px;
+  font-size: 16px;
+  margin-bottom: 20px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.modal input:focus {
+  border-color: #00b7ff;
+  box-shadow: 0 0 3px rgba(0, 183, 255, 0.4);
 }
 
 .modal-actions {
-  margin-top: 15px;
   display: flex;
   justify-content: center;
-  gap: 5px;
+  gap: 12px;
+}
+
+.modal-confirm,
+.modal-cancel {
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-weight: bold;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  border: none;
 }
 
 .modal-confirm {
-  background-color: #39e65e;
-  padding: 8px 12px;
-  border-radius: 5px;
+  background-color: #00c853;
   color: white;
-  border: none;
-  cursor: pointer;
-  font-weight: bold;
 }
 
 .modal-confirm:hover {
-  background-color: #2b9f3c;
-  transition: background-color 0.3s ease;
+  background-color: #009c3b;
 }
 
 .modal-cancel {
-  background-color: #ff0000;
-  padding: 8px 12px;
-  border-radius: 5px;
+  background-color: #4e555b;
   color: white;
-  border: none;
-  cursor: pointer;
-  font-weight: bold;
 }
 
 .modal-cancel:hover {
-  background-color: #cf4c4c;
-  transition: background-color 0.3s ease;
+  background-color: #7d878f;
+}
+
+@keyframes scaleFadeIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 </style>

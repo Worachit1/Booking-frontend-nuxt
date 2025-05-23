@@ -1,5 +1,8 @@
 <script setup>
 import { ref, computed, watch, onMounted } from "vue";
+
+import LoadingPage from "@/components/Loading.vue";
+
 import FullCalendar from "@fullcalendar/vue3";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import interactionPlugin from "@fullcalendar/interaction";
@@ -14,6 +17,7 @@ definePageMeta({
   middleware: ["load-user"],
 });
 
+const date = ref(dayjs().format("YYYY-MM-DD"));
 const formatDateTime = (date) => {
   const timestamp = date < 10000000000 ? date * 1000 : date; // ถ้าน้อยกว่า 10 หลัก → เป็น seconds
   return dayjs(timestamp).locale("th").format("D MMMM YYYY HH:mm:ss น.");
@@ -25,6 +29,8 @@ const router = useRouter();
 const roomId = ref(route.params.id);
 const roomStore = useRoomStore();
 const bookingStore = useBookingStore();
+
+const { isLoading } = storeToRefs(roomStore, bookingStore)
 
 const roomName = ref("");
 const rooms = ref([]);
@@ -56,7 +62,6 @@ const loadBookings = async () => {
 
   try {
     await bookingStore.fetchBookingByRoomId(roomId.value);
-    console.log("Booking data:", bookingStore.bookings);
 
     const filteredBookings = bookingStore.bookings.filter(
       booking => booking.status !== "Canceled" && booking.status !== "Finished"
@@ -132,21 +137,27 @@ const calendarOptions = computed(() => ({
     if (status === "Pending") color = "#f3f85c";
     if (status === "Canceled") color = "#f06666";
 
-    return {
-      html: `<div style="display:flex; align-items:center; gap:5px;">
-        <div style="width:10px; height:10px; border-radius:50%; background:${color};"></div>
-        <div>
-          <b>${room}</b>
-        </div>
-      </div>`,
-    };
+    const el = document.createElement("div");
+    el.style.display = "flex";
+    el.style.alignItems = "center";
+    el.style.gap = "5px";
+
+    const dot = document.createElement("div");
+    dot.style.width = "10px";
+    dot.style.height = "10px";
+    dot.style.borderRadius = "50%";
+    dot.style.background = color;
+
+    const text = document.createElement("div");
+    const shortRoom = room.length > 15 ? room.substring(0, 15) + "..." : room;
+    text.innerHTML = `<b>${shortRoom}</b>`;
+
+    el.appendChild(dot);
+    el.appendChild(text);
+
+    return { domNodes: [el] };
   },
-  dayMaxEvents: 2,  // แสดงได้แค่ 1 เหตุการณ์ในแต่ละวัน
-  views: {
-    dayGrid: {
-      eventLimit: true,  // เปิดใช้งาน eventLimit สำหรับ dayGrid
-    },
-  },
+
 }));
 function handleEventClick(info) {
   selectedEvent.value = info.event;
@@ -208,15 +219,18 @@ function goToRoomDetail() {
 }
 </script>
 <template>
+  <teleport to="body">
+    <LoadingPage v-if="isLoading" />
+  </teleport>
   <div class="app-container">
     <div class="main-content">
       <!-- 🎯 ปฏิทิน -->
       <div class="left-content">
         <div class="header-calendar">
-         <div class="header" style="display: flex; align-items: center; gap: 8px;">
-              <i class="fa-solid fa-calendar-days" style="font-size: 27px;"></i>
-              <span>ปฏิทินการจอง</span>
-            </div>
+          <div class="header">
+            <i class="fa-solid fa-calendar-days" style="font-size: 27px;"></i>
+            <span>ปฏิทินการจอง</span>
+          </div>
           <div class="room-search">
             <label for="room-select" style="margin-right: 7px; font-weight: bold;">เลือกห้อง:</label>
             <select v-model="selectedRoomId" id="room-select" class="date-input" style="margin-right: 10px">
@@ -231,15 +245,12 @@ function goToRoomDetail() {
             </button>
           </div>
         </div>
-
-
-        <!-- 📅 ปฏิทิน -->
-        <div class="calendar-container">
+        <div class="header-calendar">
           <div class="calendar-header-row">
-            <div class="header" style="display: flex; align-items: center; gap: 8px;">
-                <i class="fa-solid fa-table-list" style="font-size: 27px;"></i> 
-                  <span>ตารางการจอง ของห้อง: {{ roomName }}</span>
-              </div>
+            <div class="header">
+              <i class="fa-solid fa-table-list" style="font-size: 27px;"></i>
+              <span>ห้อง: {{ roomName }}</span>
+            </div>
             <div class="calendar-search">
               <label for="search-date" style="margin-right: 7px; font-weight: bold;">ค้นหาวันที่:</label>
               <input type="date" v-model="searchDate" class="date-input" />
@@ -248,9 +259,12 @@ function goToRoomDetail() {
               </button>
             </div>
           </div>
+        </div>
 
+
+        <!-- 📅 ปฏิทิน -->
+        <div class="calendar-container">
           <FullCalendar :options="calendarOptions" />
-
           <div class="calendar-footer">
             <a class="booking-button" href="/user/bookings/createBooking">
               <i class="fa-solid fa-circle-plus "></i> จองห้อง
@@ -265,9 +279,7 @@ function goToRoomDetail() {
         <div class="today-bookings">
           <h2>
             <i class="fa-brands fa-pinterest " style="color: crimson"></i>
-            ตารางการจองวันนี้ ({{
-              dayjs(date, "YYYY-MM-DD").locale("th").format("D MMMM YYYY")
-            }})
+            ตารางการจองวันนี้ ({{ dayjs(date.value, "YYYY-MM-DD").locale("th").format("D MMMM YYYY") }})
           </h2>
 
           <div v-if="todayBookings.length > 0">
@@ -334,24 +346,27 @@ function goToRoomDetail() {
       </div>
     </div>
 
-    <!-- 🔥 Popup -->
-    <div v-if="popupVisible" class="popup-wrapper">
-      <div class="popup-content">
-        <div class="popup-header"> <i class="fa-brands fa-pinterest " style="color: crimson"></i> {{
-          selectedEvent?.title }}</div>
-        <div class="popup-body">
-          <p><strong>รายละเอียด:</strong> {{ selectedEvent?.extendedProps?.description }}</p>
-          <p><strong>เริ่ม:</strong> {{ formatDateTime(selectedEvent?.start) }} </p>
-          <p><strong>สิ้นสุด:</strong> {{ formatDateTime(selectedEvent?.end) }} </p>
-          <p><strong>ผู้จอง:</strong> {{ selectedEvent?.extendedProps?.first_name }} {{
-            selectedEvent?.extendedProps?.last_name }}</p>
-          <p><strong>ห้องที่จอง:</strong> {{ selectedEvent?.extendedProps?.room_name }}</p>
-        </div>
-        <div class="popup-footer">
-          <button @click="closePopup">ปิด</button>
+    <teleport to="body">
+      <!-- 🔥 Popup -->
+      <div v-if="popupVisible" class="popup-wrapper">
+        <div class="popup-content">
+          <div class="popup-header"> <i class="fa-brands fa-pinterest " style="color: crimson"></i> {{
+            selectedEvent?.title }}</div>
+          <div class="popup-body">
+            <p><strong>รายละเอียด:</strong> {{ selectedEvent?.extendedProps?.description }}</p>
+            <p><strong>เริ่ม:</strong> {{ formatDateTime(selectedEvent?.start) }} </p>
+            <p><strong>สิ้นสุด:</strong> {{ formatDateTime(selectedEvent?.end) }} </p>
+            <p><strong>ผู้จอง:</strong> {{ selectedEvent?.extendedProps?.first_name }} {{
+              selectedEvent?.extendedProps?.last_name }}</p>
+            <p><strong>ห้องที่จอง:</strong> {{ selectedEvent?.extendedProps?.room_name }}</p>
+          </div>
+          <div class="popup-footer">
+            <button @click="closePopup">ปิด</button>
+          </div>
         </div>
       </div>
-    </div>
+    </teleport>
+
   </div>
 </template>
 
@@ -367,6 +382,10 @@ function goToRoomDetail() {
   flex: 1;
   min-height: 100vh;
   transition: margin-left 0.5s ease;
+}
+
+h2 {
+  text-decoration: underline;
 }
 
 .left-content {
@@ -386,11 +405,14 @@ function goToRoomDetail() {
 
 /* ปรับขนาด header */
 .header {
-  font-size: 30px;
+  font-size: 24px;
   font-weight: bold;
   margin-bottom: 16px;
   margin-left: 15px;
   text-decoration: underline;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .sub-header {
@@ -417,9 +439,6 @@ function goToRoomDetail() {
   background-color: whitesmoke;
   border-radius: 8px;
   overflow: hidden;
-
-  padding-bottom: 10px;
-  margin-top: 10px;
 }
 
 .calendar-footer {
@@ -432,6 +451,13 @@ function goToRoomDetail() {
   padding: 8px;
   border: 1px solid #ccc;
   border-radius: 4px;
+}
+
+.date-input {
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  cursor: pointer;
 }
 
 .search-button {
@@ -457,7 +483,7 @@ function goToRoomDetail() {
   justify-content: center;
   background-color: rgba(0, 0, 0, 0.3);
   /* dark overlay */
-  z-index: 9999;
+  z-index: 500;
   animation: fadeIn 0.2s ease-in-out;
 }
 
@@ -506,29 +532,6 @@ function goToRoomDetail() {
 .popup-footer button:hover {
   background-color: #f0e68c;
   transition: background-color 0.3s ease;
-}
-
-/* Animations */
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes scaleIn {
-  from {
-    transform: scale(0.95);
-    opacity: 0;
-  }
-
-  to {
-    transform: scale(1);
-    opacity: 1;
-  }
 }
 
 .header-row {
@@ -587,17 +590,14 @@ function goToRoomDetail() {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
-  margin-top: -10px;
+  width: 100%;
 }
 
 .calendar-search {
   display: flex;
   align-items: center;
-  margin-bottom: 16px;
+  justify-content: flex-end;
   gap: 10px;
-  margin-top: 12px;
-  margin-right: 10px;
 }
 
 .date-input {
@@ -611,16 +611,15 @@ function goToRoomDetail() {
 ::v-deep(.status-pending:hover) {
   background-color: #f0e68c !important;
   transition: background-color 0.3s ease;
+  transform: scale(1.05);
+  transition: transform 0.3s ease;
 }
 
 ::v-deep(.status-approved:hover) {
   background-color: #90ee90 !important;
   transition: background-color 0.3s ease;
-}
-
-::v-deep(.status-cancel:hover) {
-  background-color: #f08080 !important;
-  transition: background-color 0.3s ease;
+  transform: scale(1.05);
+  transition: transform 0.3s ease;
 }
 
 ::v-deep(.fc-button-group) {
@@ -682,5 +681,4 @@ function goToRoomDetail() {
     margin-top: 10px;
   }
 }
-
 </style>

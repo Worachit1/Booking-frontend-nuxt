@@ -1,22 +1,24 @@
 <script setup>
 import { ref, onMounted } from "vue";
+import Swal from "sweetalert2";
+import "sweetalert2/dist/sweetalert2.min.css";
+
+import LoadingPage from "@/components/Loading.vue";
+
 import { useRoomStore } from "@/store/roomStore";
-import { useBuildingStore } from "@/store/buildingStore";
-import { useRouter } from "vue-router";
 import { useBookingStore } from "~/store/bookingStore";
+import { useRouter } from "vue-router";
 
 const router = useRouter();
-definePageMeta({
-  middleware: ["load-user"], // Corrected middleware name
+definePageMeta({ 
+  middleware: ["load-user"] 
 });
 
-const bookingStore = useBookingStore();
 const roomStore = useRoomStore();
-const buildingStore = useBuildingStore();
+const { isLoading } = storeToRefs(roomStore);
+const bookingStore = useBookingStore();
 
 const rooms = ref([]);
-const buildings = ref([]);
-
 const selectedRoom = ref(null);
 
 const fetchRooms = async () => {
@@ -24,36 +26,59 @@ const fetchRooms = async () => {
   rooms.value = roomStore.rooms;
 };
 
-const fetchBuildings = async () => {
-  await buildingStore.fetchBuildings();
-  buildings.value = buildingStore.buildings;
-};
+const handleDeleteRoom = async (room) => {
+  await bookingStore.fetchAllBookings?.();
 
-const handleDeleteRoom = async (roomId) => {
-  try {
-    // ตรวจสอบว่าห้องนี้มีการจองอยู่หรือไม่
-    const roomBookings = bookingStore.bookings.filter(
-      (booking) => booking.room_id === roomId
-    );
+  const roomBookings = bookingStore.bookings.filter(
+    (booking) => booking.room_id === room.id && booking.status !== "Canceled"
+  );
 
-    if (roomBookings.length > 0) {
-      alert("ไม่สามารถลบห้องนี้ได้ เนื่องจากมีการจองอยู่");
-      return;
-    }
-
-    const confirmDelete = confirm("คุณแน่ใจว่าต้องการลบห้องนี้?");
-    if (!confirmDelete) return;
-
-    await roomStore.deleteRoom(roomId);
-    alert("ลบห้องเรียบร้อยแล้ว");
-    await fetchRooms();
-  } catch (error) {
-    console.error("ลบไม่สำเร็จ:", error);
-    alert("เกิดข้อผิดพลาดในการลบห้อง");
-  } finally {
-    showModal.value = false;
-    selectedRoom.value = null;
+  if (roomBookings.length > 0) {
+    await Swal.fire({
+      title: "ไม่สามารถลบได้",
+      text: "เนื่องจากมีการจองอยู่ในห้องนี้ กรุณายกเลิกการจองก่อน",
+      icon: "error",
+      confirmButtonText: "ตกลง",
+      customClass: {
+        popup: "my-popup",
+        confirmButton: "btn-ok",
+      },
+    });
+    return;
   }
+
+  const result = await Swal.fire({
+    title: `คุณต้องการลบห้อง <br>"${room.name}" ใช่ไหม?`,
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonText: "ลบ",
+    cancelButtonText: "ยกเลิก",
+    reverseButtons: true,
+    customClass: {
+      popup: "my-popup",
+      confirmButton: "btn-confirm",
+      cancelButton: "btn-cancel",
+    },
+  });
+
+  if (!result.isConfirmed) return;
+
+  roomStore.isLoading = true;
+  await roomStore.deleteRoom(room.id);
+  await fetchRooms();
+  roomStore.isLoading = false;
+
+  await Swal.fire({
+    title: "ลบแล้ว! ห้องถูกลบเรียบร้อย",
+    icon: "success",
+    confirmButtonText: "ตกลง",
+    customClass: {
+      popup: "my-popup",
+      confirmButton: "btn-ok",
+    },
+  });
+
+  selectedRoom.value = null;
 };
 
 const goTodetail = (id) => {
@@ -61,20 +86,23 @@ const goTodetail = (id) => {
 };
 
 onMounted(async () => {
-  await fetchBuildings();
+  await bookingStore.fetchBookings();
   await fetchRooms();
 });
 </script>
 
 <template>
+  <teleport to="body"> 
+    <LoadingPage v-if="isLoading" />
+  </teleport>
   <div class="container">
     <div class="header-row">
-      <h1><i class="fa-solid fa-house-chimney "></i> รายการห้องประชุม</h1>
+      <h1><i class="fa-solid fa-house-chimney"></i> รายการห้องประชุม</h1>
       <button
         class="btn-create"
         @click="router.push('/admin/rooms/createRoom')"
       >
-        <i class="fa-solid fa-circle-plus "></i> เพิ่มห้อง
+        <i class="fa-solid fa-circle-plus"></i> เพิ่มห้อง
       </button>
     </div>
 
@@ -98,10 +126,10 @@ onMounted(async () => {
           <td>{{ room.description }}</td>
           <td>
             <button class="btn-detail" @click="goTodetail(room.id)">
-              <i class="fa-solid fa-info "></i> ดูข้อมูล
+              <i class="fa-solid fa-info"></i> ดูข้อมูล
             </button>
-            <button class="btn-cancel" @click="handleDeleteRoom(room.id)">
-              <i class="fa-solid fa-trash-can "></i> ลบ
+            <button class="btn-cancel" @click="handleDeleteRoom(room)">
+              <i class="fa-solid fa-trash-can"></i> ลบ
             </button>
           </td>
         </tr>
@@ -129,7 +157,6 @@ onMounted(async () => {
   margin: 0;
   font-size: 24px;
 }
-
 
 .room-cell {
   text-align: center;
@@ -241,7 +268,7 @@ h1 {
   border: none;
   padding: 7px 15px;
   margin-left: 10px;
-   margin-top: 30px;
+  margin-top: 30px;
 }
 
 .btn-cancel:hover {

@@ -11,9 +11,10 @@
   /* ใช้ฟอนต์ */
   body {
     font-family: 'Kanit';
-    padding-top: 50px;
-    padding-left: 20px;
+    margin:0;
+    padding:20px;
     background-color: whitesmoke;
+    height: 100%;
   }
 
   input[type="text"] {

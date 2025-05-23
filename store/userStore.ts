@@ -14,6 +14,7 @@ export const useUserStore = defineStore("user", {
         },
 
         async fetchUsers() {
+            this.isLoading = true;
             const config = useRuntimeConfig();
             const token = localStorage.getItem("token") || null;
             const headers = token ? { Authorization: `Bearer ${token}` } : {};
@@ -24,20 +25,22 @@ export const useUserStore = defineStore("user", {
                 });
                 if (response.status === 200) {
                     this.users = response.data.data;
-                    console.log("Users fetched successfully:", this.users);
+                    // console.log("Users fetched successfully:", this.users);
                 } else {
                     console.error("Error fetching users:", response.statusText);
                 }
             } catch (error) {
                 console.error("Error fetching users:", error);
+            }finally {
+                this.isLoading = false;
             }
         },
-
         async getUserById(user_id: string) {
             const config = useRuntimeConfig();
             const token = localStorage.getItem("token") || null;
             const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
+            this.isLoading = true;
             try {
                 const response = await axios.get(`${config.public.apiBase}/api/v1/users/${user_id}`, {
                     headers,
@@ -57,6 +60,7 @@ export const useUserStore = defineStore("user", {
             }
         },
         async addUser(newUser: any) {
+            this.isLoading = true;
             const config = useRuntimeConfig();
             const formData = new FormData();
             formData.append("first_name", newUser.first_name);
@@ -74,17 +78,20 @@ export const useUserStore = defineStore("user", {
                     },
                 });
                 if (response.status === 200) {
-                    console.log("User added successfully:", response.data.data);
+                    // console.log("User added successfully:", response.data.data);
                     return response.data;
                 } else {
                     console.error("Error adding user:", response.statusText);
                 }
             } catch (error) {
                 console.error("Error adding user:", error);
+            }finally{
+                this.isLoading = false;
             }
         },
 
         async updateUser(user_id: string, updatedUser: any) {
+            this.isLoading = true;
             const config = useRuntimeConfig();
             const token = localStorage.getItem("token") || null;
             const formData = new FormData();
@@ -103,16 +110,19 @@ export const useUserStore = defineStore("user", {
                     },
                 });
                 if (response.status === 200) {
-                    console.log("User updated successfully:", response.data.data);
+                    // console.log("User updated successfully:", response.data.data);
                     return response.data;
                 } else {
                     console.error("Error updating user:", response.statusText);
                 }
             } catch (error) {
                 console.error("Error updating user:", error);
+            }finally {
+                this.isLoading = false;
             }
         },
         async deleteUser(user_id: string) {
+            this.isLoading = true;
             const config = useRuntimeConfig();
             const token = localStorage.getItem("token") || null;
             const headers = token ? { Authorization: `Bearer ${token}` } : {};
@@ -122,13 +132,15 @@ export const useUserStore = defineStore("user", {
                     headers,
                 });
                 if (response.status === 200) {
-                    console.log("User deleted successfully:", response.data.data);
+                    // console.log("User deleted successfully:", response.data.data);
                     return response.data;
                 } else {
                     console.error("Error deleting user:", response.statusText);
                 }
             } catch (error) {
                 console.error("Error deleting user:", error);
+            }finally {
+                this.isLoading = false;
             }
         },
     },

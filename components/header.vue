@@ -1,30 +1,35 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from "vue";
+
+import LoadingPage from "@/components/Loading.vue";
+
+
 import { useUserStore } from "@/store/userStore";
 import { useAuthStore } from "@/store/authStore";
-import { useUserRoleStore } from "@/store/userRoleStore";
 import { useBookingStore } from "~/store/bookingStore";
 import loginmodal from "@/components/loginModal.vue";
 import registerModal from "@/components/registerModal.vue";
-
 import { useRouter } from "vue-router";
-
 import dayjs from "dayjs";
 import "dayjs/locale/th";
 
+import { useUserId } from "~/composables/useUser";
+const userId = useUserId();
+
 const formatDateTime = (date) => {
-  const timestamp = date < 10000000000 ? date * 1000 : date; // ถ้าน้อยกว่า 10 หลัก → เป็น seconds
-  return dayjs(timestamp).locale("th").format("D MMMM YYYY HH:mm:ss น.");
+  const timestamp = date < 10000000000 ? date * 1000 : date;
+  return dayjs(timestamp).locale("th").format("D MMM YYYY HH:mm");
 };
 
 const router = useRouter();
 const userStore = useUserStore();
 const authStore = useAuthStore();
 const bookingStore = useBookingStore();
-const userRoleStore = useUserRoleStore();
-const userId = localStorage.getItem("user_id");
+
+const {isLoadingPage} = storeToRefs(userStore, authStore, bookingStore);
 
 const user = computed(() => userStore.currentUser);
+const currentUserRole = computed(() => user.value?.role_name);
 const isLoading = computed(() => userStore.isLoading);
 const isLoggedIn = computed(() => !!user.value?.id);
 
@@ -43,53 +48,50 @@ const profileWrapperRef = ref(null);
 const isModalOpenLogin = ref(false);
 const isModalOpenRegister = ref(false);
 const bookingsDropdownRef = ref(null);
-const currentUserRole = computed(() => userRoleStore.currentUserRole);
 const showBookings = ref(false);
+
+const acknowledgedBookings = ref([]);
 
 // กรองเฉพาะการจองที่มีสถานะ Pending ของ Admin
 const pendingBookings = computed(() => {
-  if (currentUserRole.value?.[0]?.role_name === "Admin") {
-    const filteredBookings = bookingStore.bookings.filter(
+  if (user.value?.role_name === "Admin") {
+    return bookingStore.bookings.filter(
       (booking) => booking.status === "Pending"
     );
-    // console.log("Pending Bookings:", filteredBookings); // ตรวจสอบรายการที่กรองแล้ว
-    return filteredBookings;
   }
   return [];
 });
 
-// กรองเฉพาะการจองที่มีสถานะ Approved และ Cancel ของ User
+// กรองเฉพาะการจองที่มีสถานะ Approved หรือ Cancel ของ User
 const statusUserBookings = computed(() => {
-  if (currentUserRole.value?.[0]?.role_name !== "Admin") {
+  if (user.value?.role_name !== "Admin") {
     return bookingStore.bookings.filter(
       (booking) =>
         booking.user_id === userId &&
         (booking.status === "Approved" || booking.status === "Canceled") &&
-        !acknowledgedBookings.value.includes(booking.id) // กรองการจองที่ยังไม่ได้รับทราบ
+        !acknowledgedBookings.value.includes(booking.id)
     );
   }
   return [];
 });
 
-// สำหรับจุดแดงกระดิ่ง Admin
+// จุดแดงกระดิ่ง
 const hasPendingBookings = computed(() =>
-  currentUserRole.value?.[0]?.role_name === "Admin"
-    ? pendingBookings.value.length > 0
-    : false
+  user.value?.role_name === "Admin" ? pendingBookings.value.length > 0 : false
 );
-// สำหรับจุดแดงกระดิ่ง User
 const hasUserBookings = computed(() =>
-  currentUserRole.value?.[0]?.role_name !== "Admin"
+  user.value?.role_name !== "Admin"
     ? statusUserBookings.value.length > 0
     : false
 );
 
-// สำหรับกดรับการจองของ User
-const acknowledgedBookings = ref([]); // เก็บ ID ของการจองที่ User รับทราบแล้ว
 function acknowledgeBooking(bookingId) {
   if (!acknowledgedBookings.value.includes(bookingId)) {
-    acknowledgedBookings.value.push(bookingId);  // เพิ่มการจองที่รับทราบแล้ว
-    localStorage.setItem("acknowledgedBookings", JSON.stringify(acknowledgedBookings.value));  // เก็บข้อมูลใน localStorage
+    acknowledgedBookings.value.push(bookingId);
+    localStorage.setItem(
+      "acknowledgedBookings",
+      JSON.stringify(acknowledgedBookings.value)
+    );
   }
 }
 
@@ -99,22 +101,11 @@ function toggleBookings() {
 function closeBookings() {
   showBookings.value = false;
 }
-
 function handleProfileClick() {
   showMenu.value = !showMenu.value;
 }
-
 function closeMenu() {
   showMenu.value = false;
-}
-
-function handleClickProfileOutside(event) {
-  if (
-    profileWrapperRef.value &&
-    !profileWrapperRef.value.contains(event.target)
-  ) {
-    closeMenu();
-  }
 }
 
 function handleClickBookingOutside(event) {
@@ -127,11 +118,20 @@ function handleClickBookingOutside(event) {
   }
 }
 
+function handleClickProfileOutside(event) {
+  if (
+    profileWrapperRef.value &&
+    !profileWrapperRef.value.contains(event.target)
+  ) {
+    closeMenu();
+  }
+}
+
 function openLoginModal() {
-  isModalOpenLogin.value = true; // เปิด modal login
+  isModalOpenLogin.value = true;
 }
 function openRegisterModal() {
-  isModalOpenRegister.value = true; // เปิด modal register
+  isModalOpenRegister.value = true;
 }
 
 function viewProfile() {
@@ -144,26 +144,20 @@ async function logout() {
     await authStore.logout();
     closeMenu();
     window.location.reload();
-    window.location.href = "/"; // Redirect to home page after logout
+    window.location.href = "/";
   } catch (error) {
     console.error("Logout failed:", error);
   }
   showMenu.value = false;
 }
 
-onMounted(async () => {
+onMounted(() => {
   document.addEventListener("click", handleClickBookingOutside);
   document.addEventListener("click", handleClickProfileOutside);
 
-  const userId = localStorage.getItem("user_id");
-
-  if (userId) {
-    await userRoleStore.getUserRoleById(userId);
-    await bookingStore.fetchBookings(); // โหลด booking ทุกกรณี
-  }
-  const storedAcknowledgedBookings = localStorage.getItem("acknowledgedBookings");
-  if (storedAcknowledgedBookings) {
-    acknowledgedBookings.value = JSON.parse(storedAcknowledgedBookings);  // โหลดข้อมูลจาก localStorage
+   const savedAcknowledged = localStorage.getItem("acknowledgedBookings");
+  if (savedAcknowledged) {
+    acknowledgedBookings.value = JSON.parse(savedAcknowledged);
   }
 });
 
@@ -174,6 +168,7 @@ onUnmounted(() => {
 </script>
 
 <template>
+  <LoadingPage v-if="isLoadingPage" />
   <div v-if="!isLoading" class="header">
     <div class="profile-wrapper" ref="profileWrapperRef">
       <div class="profile">
@@ -192,7 +187,7 @@ onUnmounted(() => {
           ref="bookingsDropdownRef"
         >
           <!-- Admin -->
-          <ul v-if="currentUserRole[0]?.role_name === 'Admin'">
+          <ul v-if="currentUserRole === 'Admin'">
             <router-link to="/admin/bookings" class="view-all-link">
               <li
                 v-for="(booking, index) in pendingBookings"
@@ -265,18 +260,18 @@ onUnmounted(() => {
         <ul>
           <template v-if="isLoggedIn">
             <li @click="viewProfile">
-              <i class="fa-solid fa-address-card "></i> ดูโปรไฟล์
+              <i class="fa-solid fa-address-card"></i> ดูโปรไฟล์
             </li>
             <li @click="logout">
-              <i class="fa-solid fa-right-from-bracket "></i> ออกจากระบบ
+              <i class="fa-solid fa-right-from-bracket"></i> ออกจากระบบ
             </li>
           </template>
           <template v-else>
             <li @click="openLoginModal">
-              <i class="fa-solid fa-user   "></i> เข้าสู่ระบบ
+              <i class="fa-solid fa-user"></i> เข้าสู่ระบบ
             </li>
             <li @click="openRegisterModal">
-              <i class="fa-solid fa-user-plus   "></i> สมัครสมาชิก
+              <i class="fa-solid fa-user-plus"></i> สมัครสมาชิก
             </li>
           </template>
         </ul>
@@ -424,7 +419,7 @@ onUnmounted(() => {
   padding: 10px 20px;
   cursor: pointer;
   font-size: 14px;
-  transition: background-color 0.3s ease, color 0.3s ease;    
+  transition: background-color 0.3s ease, color 0.3s ease;
   animation: scaleIn 0.25s ease;
 }
 

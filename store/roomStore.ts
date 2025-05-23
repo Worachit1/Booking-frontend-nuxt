@@ -1,36 +1,36 @@
 import axios from "axios";
 import { defineStore } from "pinia";
 
-const config = useRuntimeConfig();
+import type {Room} from "@/models/room.model";
 
-interface Room {
-  name: string;
-  description: string;
-  capacity: number;
-  image_url: File | string; // image_url จะเป็นไฟล์หรือ URL ก็ได้
-}
+const config = useRuntimeConfig();
 
 export const useRoomStore = defineStore("room", {
   state: () => ({
-    rooms: [],
+    rooms: [] as Room [],
+    isLoading: false,
   }),
   actions: {
     async fetchRooms() {
+      this.isLoading = true;
       try {
         const response = await axios.get(
           `${config.public.apiBase}/api/v1/rooms/list`
         );
         if (response.status === 200) {
           this.rooms = response.data.data;
-          console.log("Rooms fetched successfully:", this.rooms);
+          // console.log("Rooms fetched successfully:", this.rooms);
         } else {
           console.error("Error fetching rooms:", response.statusText);
         }
       } catch (error) {
         console.error("Error fetching rooms:", error);
+      } finally {
+        this.isLoading = false;
       }
     },
     async getById(room_id: string) {
+      this.isLoading = true;
       try {
         const response = await axios.get(
           `${config.public.apiBase}/api/v1/rooms/${room_id}`
@@ -45,9 +45,12 @@ export const useRoomStore = defineStore("room", {
       } catch (error) {
         console.error("Error fetching room:", error);
         return null; // หากเกิดข้อผิดพลาด
+      } finally {
+        this.isLoading = false;
       }
     },
     async addRoom(newRoom: Room) {
+      this.isLoading = true;
       try {
         const token = localStorage.getItem("token");
         const headers = token ? { Authorization: `Bearer ${token}` } : {};
@@ -76,7 +79,7 @@ export const useRoomStore = defineStore("room", {
         );
 
         if (response.status === 200) {
-          console.log("Room added successfully:", response.data.data);
+          // console.log("Room added successfully:", response.data.data);
           return response.data;
         } else {
           console.error("Error adding room:", response.statusText);
@@ -85,9 +88,12 @@ export const useRoomStore = defineStore("room", {
       } catch (error) {
         console.error("Error adding room:", error);
         return null;
+      } finally {
+        this.isLoading = false;
       }
     },
     async updateRoom(id: string, formData: FormData) {
+      this.isLoading = true;
       try {
         const token = localStorage.getItem("token");
         const headers = token ? { Authorization: `Bearer ${token}` } : {};
@@ -104,7 +110,7 @@ export const useRoomStore = defineStore("room", {
         );
 
         if (response.status === 200) {
-          console.log("Room updated successfully:", response.data.data);
+          // console.log("Room updated successfully:", response.data.data);
           return response.data;
         } else {
           console.error("Error updating room:", response.statusText);
@@ -113,9 +119,12 @@ export const useRoomStore = defineStore("room", {
       } catch (error) {
         console.error("Error updating room:", error);
         return null;
+      } finally {
+        this.isLoading = false;
       }
     },
     async deleteRoom(id: string) {
+      this.isLoading = true;
       try {
         const token = localStorage.getItem("token");
         const headers = token ? { Authorization: `Bearer ${token}` } : {};
@@ -128,12 +137,14 @@ export const useRoomStore = defineStore("room", {
           }
         );
         if (response.status === 200) {
-          console.log("Room deleted successfully:", response.data.data);
+          // console.log("Room deleted successfully:", response.data.data);
         } else {
           console.error("Error deleting room:", response.statusText);
         }
       } catch (error) {
         console.error("Error deleting room:", error);
+      } finally {
+        this.isLoading = false;
       }
     },
   },

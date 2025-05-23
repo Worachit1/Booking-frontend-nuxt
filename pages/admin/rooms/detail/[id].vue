@@ -1,55 +1,62 @@
 <script setup>
 import { useRoute, useRouter } from "vue-router";
-import { useRoomStore } from "@/store/roomStore";
-import { useBuilding_RoomStore } from "@/store/building_roomStore";
 import { ref, onMounted } from "vue";
+import LoadingPage from "~/components/Loading.vue";
+import { useRoomStore } from "@/store/roomStore";
+
 definePageMeta({
-  middleware: ["load-user"] // Corrected middleware name
+  middleware: ["load-user"]
 });
 
 const route = useRoute();
 const router = useRouter();
 const roomId = route.params.id;
 const roomStore = useRoomStore();
-const buildingRoomStore = useBuilding_RoomStore();
-const buildingRoom = ref(null);
+const { isLoading } = storeToRefs(roomStore);
+
+const room = ref({});
 
 const goToEditRoom = () => {
-    router.push(`/admin/rooms/edit/${roomId}`);
+  router.push(`/admin/rooms/edit/${roomId}`);
 };
 
 onMounted(async () => {
-    try {
-        await roomStore.getById(roomId); 
-        // Fetch building room details
-        console.log("Fetching room details for ID:", roomId);
-        buildingRoom.value = await buildingRoomStore.getByRoomId(roomId);
-    } catch (error) {
-        console.error("Error fetching room details:", error);
-    }
+  try {
+    // ดึงข้อมูลห้องตาม id
+    const data = await roomStore.getById(roomId);
+    room.value = data || {};
+  } catch (error) {
+    console.error("Error fetching room details:", error);
+  }
 });
 </script>
 
 <template>
-    <div class="room-details-container">
-        <div class="header-row">
-            <h1><i class="fa-solid fa-house-chimney "></i> รายละเอียดห้อง</h1>
-            <h3>{{ buildingRoom?.room_name }} &nbsp; {{ buildingRoom?.building_name }}</h3>
-        </div>
-        <div class="image-container">
-            <img :src="buildingRoom?.image_url || '/images/default-room.jpg'" alt="Room Image" width="400px" height="400px"/>
-        </div>
-        <div class="info-row">
-            <div class="info-box">รายละเอียด : {{ buildingRoom?.description }}</div>
-            <div class="info-box">จำนวนที่เข้าได้ : {{ buildingRoom?.capacity }} คน</div>
-        </div>
-        <div class="button-row">
-            <button class="button-calendar" @click="$router.push('/')">ไปยังหน้าปฏิทินการจอง</button>
-            <button class="button-edit" @click="goToEditRoom">แก้ไขข้อมูลห้อง</button>
-            <button class="button-back" @click="$router.back()">กลับ</button>
-        </div>
+  <template v-if="isLoading">
+    <teleport to="body">
+      <LoadingPage />
+    </teleport>
+  </template>
+  <div v-else class="room-details-container">
+    <div class="header-row">
+      <h1><i class="fa-solid fa-house-chimney "></i> รายละเอียดห้อง</h1>
+      <h2>{{ room.name }} &nbsp; {{ room.building }}</h2>
     </div>
+    <div class="image-container">
+      <img :src="room.image_url || '/images/default-room.jpg'" alt="Room Image" width="400px" height="400px"/>
+    </div>
+    <div class="info-row">
+      <div class="info-box">รายละเอียด : {{ room.description }}</div>
+      <div class="info-box">จำนวนที่เข้าได้ : {{ room.capacity }} คน</div>
+    </div>
+    <div class="button-row">
+      <button class="button-calendar" @click="$router.push('/')">ไปยังหน้าปฏิทินการจอง</button>
+      <button class="button-edit" @click="goToEditRoom">แก้ไขข้อมูลห้อง</button>
+      <button class="button-back" @click="$router.back()">กลับ</button>
+    </div>
+  </div>
 </template>
+
 
 <style scoped>
 .room-details-container {

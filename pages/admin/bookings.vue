@@ -1,35 +1,85 @@
 <script setup>
 import { onMounted, ref, computed } from "vue";
+import Swal from "sweetalert2";
+import "sweetalert2/dist/sweetalert2.min.css";
+
+import LoadingPage from "@/components/Loading.vue";
+
 import { useBookingStore } from "@/store/bookingStore";
-import { useUserStore } from "@/store/userStore";
-import { useRoute } from "vue-router";
+import { storeToRefs } from "pinia";
 import dayjs from "dayjs";
 import "dayjs/locale/th";
+
 definePageMeta({
-  middleware: ["load-user"], // Corrected middleware name
+  middleware: ["load-user"],
 });
+import { useUserId } from "~/composables/useUser";
+const userId = useUserId();
 
 const bookingStore = useBookingStore();
 const bookings = computed(() => bookingStore.bookings);
+const { isLoading } = storeToRefs(bookingStore, useUserId);
 
-const route = useRoute();
-const userId = route.params.id || localStorage.getItem("user_id");
-const userStore = useUserStore();
-const user = computed(() => userStore.currentUser);
+const currentPage = ref(1);
+const pageSize = 10;
+const totalBookings = ref(0);
 
-const formatDateTime = (date) => {
-  const timestamp = date < 10000000000 ? date * 1000 : date; // ถ้าน้อยกว่า 10 หลัก → เป็น seconds
-  return dayjs(timestamp).locale("th").format("D MMMM YYYY HH:mm:ss น.");
+const fetchBookings = async () => {
+  await bookingStore.fetchBookings({
+    page: currentPage.value,
+    size: pageSize,
+  });
+  totalBookings.value = bookingStore.total;
 };
 
-const statusClass = (status) => {
-  return {
-    "btn-pending": status === "Pending",
-    "btn-approved": status === "Approved",
-    "btn-cancel": status === "Canceled",
-    "btn-finished": status === "Finished",
-  };
+const jumpToPage = ref(currentPage.value);
+const totalPages = computed(() => Math.ceil(totalBookings.value / pageSize));
+const paginationRange = computed(() => {
+  const total = totalPages.value;
+  const current = currentPage.value;
+  const delta = 1;
+  const range = [];
+  for (let i = 1; i <= total; i++) {
+    if (
+      i === 1 ||
+      i === total ||
+      (i >= current - delta && i <= current + delta)
+    ) {
+      range.push(i);
+    } else if (range[range.length - 1] !== "...") {
+      range.push("...");
+    }
+  }
+  return range;
+});
+const gotoPage = async (page) => {
+  if (
+    page === "..." ||
+    page === currentPage.value ||
+    page < 1 ||
+    page > totalPages.value
+  ) {
+    return;
+  }
+
+  currentPage.value = page;
+  await fetchBookings();
 };
+
+onMounted(fetchBookings);
+
+const formatDateTime = (date) =>
+  dayjs(date < 1e10 ? date * 1000 : date)
+    .locale("th")
+    .format("D MMMM YYYY เวลา HH:mm:ss น.");
+
+const statusClass = (status) => ({
+  "btn-pending": status === "Pending",
+  "btn-approved": status === "Approved",
+  "btn-cancel": status === "Canceled",
+  "btn-finished": status === "Finished",
+});
+
 const statusMap = {
   Pending: "กำลังรอ...",
   Approved: "อนุมัติการจองแล้ว",
@@ -39,31 +89,89 @@ const statusMap = {
 
 const allStatuses = Object.keys(statusMap);
 const selectedStatuses = ref([...allStatuses]);
-const filteredBookings = computed(() => {
-  return bookings.value.filter(
+const filteredBookings = computed(() =>
+  bookings.value.filter(
     (b) =>
       (!b.deleted_at || b.deleted_at === 0) &&
       selectedStatuses.value.includes(b.status)
-  );
-});
+  )
+);
 
 const showModal = ref(false);
 const selectedBooking = ref(null);
 
 const handleUpdateStatus = async (bookingId, status) => {
   try {
+    const booking = bookings.value.find((b) => b.id === bookingId);
+
+    if (status === "Approved") {
+      const isOverlap = bookings.value.some(
+        (b) =>
+          b.id !== bookingId &&
+          b.room_id === booking.room_id &&
+          b.status === "Approved" &&
+          booking.start_time < b.end_time &&
+          booking.end_time > b.start_time
+      );
+      if (isOverlap) {
+        await Swal.fire({
+          icon: "error",
+          title: "ไม่สามารถอนุมัติได้",
+          text: "มีการจองที่ได้รับอนุมัติแล้วในช่วงเวลาดังกล่าว",
+          confirmButtonText: "ตกลง",
+          customClass: {
+            popup: "my-popup",
+            confirmButton: "btn-ok",
+          },
+        });
+        return;
+      }
+    }
+
+    const actionText = status === "Approved" ? "อนุมัติ" : "ปฏิเสธ";
+    const confirmResult = await Swal.fire({
+      title: `คุณต้องการ${actionText}การจองนี้ใช่หรือไม่?`,
+      icon: "question",
+      showCancelButton: true,
+      confirmButtonText: `ใช่, ${actionText}`,
+      cancelButtonText: "ยกเลิก",
+      reverseButtons: true,
+      customClass: {
+        popup: "my-popup",
+        confirmButton: status === "Approved" ? "btn-approved" : "btn-cancel",
+        cancelButton: "btn-close",
+      },
+    });
+
+    if (!confirmResult.isConfirmed) return;
+
     const updatedBooking = {
-      status: status,
+      status,
       approved_by: userId,
     };
 
-    console.log("📦 Updating booking:", updatedBooking); // 🟡 ดูว่า approved_by มาไหม
     await bookingStore.updateStatusBooking(bookingId, updatedBooking);
-    alert("อัปเดตสถานะเรียบร้อยแล้ว");
+    await Swal.fire({
+      icon: "success",
+      title: "อัปเดตสถานะเรียบร้อยแล้ว",
+      confirmButtonText: "ตกลง",
+      customClass: {
+        popup: "my-popup",
+        confirmButton: "btn-ok",
+      },
+    });
     window.location.reload();
   } catch (error) {
     console.error("❌ Error updating booking status:", error);
-    alert("เกิดข้อผิดพลาดในการอัปเดต");
+    await Swal.fire({
+      icon: "error",
+      title: "เกิดข้อผิดพลาดในการอัปเดต",
+      confirmButtonText: "ตกลง",
+      customClass: {
+        popup: "my-popup",
+        confirmButton: "btn-ok",
+      },
+    });
   } finally {
     showModal.value = false;
     selectedBooking.value = null;
@@ -74,109 +182,159 @@ const openModal = (booking) => {
   selectedBooking.value = booking;
   showModal.value = true;
 };
-
-onMounted(async () => {
-  await bookingStore.fetchBookings();
-  bookings.value = bookingStore.bookings;
-
-  await userStore.fetchUsers(); // ดึง user ทั้งหมด
-
-  // สร้าง Map user_id => ชื่อ
-  const userMap = {};
-  userStore.users.forEach((user) => {
-    userMap[user.id] = `${user.first_name} ${user.last_name}`;
-  });
-
-  // ผูกชื่อให้ booking
-  bookings.value.forEach((booking) => {
-    if (booking.approved_by) {
-      booking.approved_by_name = userMap[booking.approved_by] || null;
-    }
-  });
-
-  user.value = userStore.currentUser;
-});
 </script>
 
 <template>
-  <h1 style="margin-left: 5px;"><i class="fa-solid fa-book-open "></i> รายการจองห้องประชุม</h1>
+  <teleport to="body">
+    <LoadingPage v-if="isLoading" />
+  </teleport>
+  <h1 style="margin-left: 25px; font-size: 24px;">
+    <i class="fa-solid fa-book-open"></i> รายการจองห้องประชุม
+  </h1>
   <div class="container">
     <div class="row">
       <div class="col-md-12">
         <!-- ตัวกรองสถานะ -->
         <div class="status-filter mb-3">
           <label class="filter-title">กรองตามสถานะ:</label>
-          <div class="status-option" v-for="status in allStatuses" :key="status">
-            <input class="custom-checkbox" type="checkbox" :id="status" :value="status" v-model="selectedStatuses" />
+          <div
+            class="status-option"
+            v-for="status in allStatuses"
+            :key="status"
+          >
+            <input
+              class="custom-checkbox"
+              type="checkbox"
+              :id="status"
+              :value="status"
+              v-model="selectedStatuses"
+            />
             <label class="custom-label" :for="status">
               {{ statusMap[status] }}
             </label>
           </div>
         </div>
 
+        <!-- ตาราง -->
+        <div class="booking-table-wrapper">
+          <table
+            class="table table-bordered table-striped"
+            v-if="filteredBookings.length"
+          >
+            <thead>
+              <tr>
+                <th>วัน / เวลา ที่จอง</th>
+                <th>ผู้จอง</th>
+                <th>ห้องที่จอง</th>
+                <th>เวลาเริ่มจอง</th>
+                <th>เวลาสิ้นสุดจอง</th>
+                <th>สถานะ</th>
+                <th>อนุมัติการจองโดย</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="booking in filteredBookings" :key="booking.id">
+                <td>{{ formatDateTime(booking.created_at) }}</td>
+                <td>{{ booking.user_name }} {{ booking.user_lastname }}</td>
+                <td>{{ booking.room_name }}</td>
+                <td>{{ formatDateTime(booking.start_time) }}</td>
+                <td>{{ formatDateTime(booking.end_time) }}</td>
+                <td>
+                  <button
+                    :class="statusClass(booking.status)"
+                    :disabled="['Approved', 'Canceled', 'Finished'].includes(booking.status)"
+                    @click="openModal(booking)"
+                  >
+                    {{ booking.status }}
+                  </button>
+                </td>
+                <td>
+                  <span>
+                    {{
+                      booking.nameapproved_by
+                        ? booking.nameapproved_by
+                        : "ยังไม่ได้อนุมัติ"
+                    }}
+                  </span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
 
-        <table class="table table-bordered table-striped" v-if="bookings && filteredBookings.length">
-          <thead>
-            <tr>
-              <th>วัน / เวลา ที่จอง</th>
-              <th>ผู้จอง</th>
-              <th>ห้องที่จอง</th>
-              <th>เวลาเริ่มจอง</th>
-              <th>เวลาสิ้นสุดจอง</th>
-              <th>สถานะ</th>
-              <th>อนุมัติการจองโดย</th>
-            </tr>
-          </thead>
-          <tbody>
-            <!-- แสดงการจอง  -->
-            <tr v-for="booking in filteredBookings" :key="booking.id">
-              <td>{{ formatDateTime(booking.created_at) }}</td>
-              <td>{{ booking.user_name }} {{ booking.user_lastname }}</td>
-              <td>{{ booking.room_name }}</td>
-              <td>{{ formatDateTime(booking.start_time) }}</td>
-              <td>{{ formatDateTime(booking.end_time) }}</td>
-              <td>
-                <button :class="statusClass(booking.status)" :disabled="booking.status === 'Approved' ||
-                  booking.status === 'Canceled' ||
-                  booking.status === 'Finished'
-                  " @click="openModal(booking)">
-                  {{ booking.status }}
-                </button>
-              </td>
-              <td>
-                <span v-if="booking.approved_by_name">
-                  {{ booking.approved_by_name }}
-                </span>
-                <span v-else>ยังไม่ได้อนุมัติ</span>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-        <div v-else><br />ไม่มีการจองในขณะนี้</div>
+          <div v-else class="no-data">ไม่มีการจองในขณะนี้</div>          
+        </div>
+      </div>
+        <div class="pagination-bar">
+            <div class="pagination">
+            <button
+              :disabled="currentPage === 1"
+              @click="gotoPage(currentPage - 1)"
+            >
+              ก่อนหน้า
+            </button>
+
+            <button
+              v-for="page in paginationRange"
+              :key="page + '-btn'"
+              :class="{ active: page === currentPage }"
+              @click="gotoPage(page)"
+              :disabled="page === '...'"
+            >
+              {{ page }}
+            </button>
+
+            <button
+              :disabled="currentPage === totalPages"
+              @click="gotoPage(currentPage + 1)"
+            >
+              ถัดไป
+            </button>
+
+            <div class="page-jump">
+              <label>ไปหน้า:</label>
+              <input
+                type="number"
+                min="1"
+                :max="totalPages"
+                v-model.number="jumpToPage"
+                @keyup.enter="gotoPage(jumpToPage)"
+                :disabled="totalPages === 0"
+              />
+            </div>
+          </div>
+        </div>
+    </div>
+    
+  </div>
+  
+
+  <teleport to="body">
+    <div v-if="showModal" class="modal">
+      <div class="modal-content">
+        <h3>คุณต้องการอนุมัติ หรือ ปฏิเสธการจองนี้ใช่หรือไม่?</h3>
+        <p>
+          ผู้จอง: {{ selectedBooking?.user_name }}
+          {{ selectedBooking?.user_lastname }}
+        </p>
+        <p>ห้องที่จอง: {{ selectedBooking?.room_name }}</p>
+        <div class="modal-actions">
+          <button
+            @click="handleUpdateStatus(selectedBooking.id, 'Approved')"
+            class="btn-approved"
+          >
+            อนุมัติ
+          </button>
+          <button
+            @click="handleUpdateStatus(selectedBooking.id, 'Canceled')"
+            class="btn-cancel"
+          >
+            ปฏิเสธ
+          </button>
+          <button @click="showModal = false" class="btn-close">ปิด</button>
+        </div>
       </div>
     </div>
-  </div>
-
-  <!-- แสดง Modal สำหรับการอัพเดทสถานะการจอง -->
-  <div v-if="showModal" class="modal">
-    <div class="modal-content">
-      <h3>คุณต้องการอนุมัติ หรือ ปฏิเสธการจองนี้ใช่หรือไม่?</h3>
-      <p>
-        ผู้จอง: {{ selectedBooking?.user_name }}
-        {{ selectedBooking?.user_lastname }}
-      </p>
-      <p>ห้องที่จอง: {{ selectedBooking?.room_name }}</p>
-      <div class="modal-actions">
-        <button @click="handleUpdateStatus(selectedBooking.id, 'Approved')" class="btn-approved">
-          อนุมัติ
-        </button>
-        <button @click="handleUpdateStatus(selectedBooking.id, 'Canceled')" class="btn-cancel">
-          ปฏิเสธ
-        </button>
-        <button @click="showModal = false" class="btn-close">ปิด</button>
-      </div>
-    </div>
-  </div>
+  </teleport>
 </template>
 
 <style scoped>
@@ -187,7 +345,6 @@ onMounted(async () => {
 .table {
   width: 100%;
   border-collapse: collapse;
-
 }
 
 h1 {
@@ -267,7 +424,6 @@ td {
   padding: 10px;
   text-align: left;
   border-bottom: 1px solid #ddd;
-  
 }
 
 th {
@@ -359,5 +515,70 @@ button {
 .btn-close:hover {
   background-color: #d8ba6f;
   transition: background-color 0.3s ease;
+}
+
+.booking-table-wrapper {
+  min-height: 400px; /* ✅ ปรับความสูงขั้นต่ำตามต้องการ */
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  border: 1px solid #ddd;
+  padding: 16px;
+  background-color: #fff;
+  border-radius: 8px;
+}
+
+.no-data {
+  text-align: center;
+  padding: 20px;
+  font-style: italic;
+  color: #888;
+}
+
+.pagination {
+  display: flex;
+  justify-content: center; /* ทำให้ปุ่มเรียงตรงกลาง */
+  align-items: center;
+  flex-wrap: wrap; /* เผื่อปุ่มเยอะจะได้ไม่ล้น */
+  gap: 5px;
+}
+
+.pagination button {
+  padding: 6px 12px;
+  font-size: 14px;
+  cursor: pointer;
+  background-color: #13131f;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+}
+
+.pagination button:hover:not(:disabled) {
+  background-color: #444760;
+}
+
+.pagination button:disabled {
+  background-color: #e0e0e0;
+  color: #777;
+  cursor: not-allowed;
+  opacity: 1;
+}
+
+.pagination button.active {
+  background-color: #f5f5f5;
+  color: #13131f;
+  font-weight: bold;
+  border: 1px solid #ccc;
+}
+.pagination-bar {
+  position: fixed;
+  bottom: -10;
+  justify-content: center;
+  width: 100%;
+  padding: 1rem;
+  text-align: center;
+  z-index: 50;
+  display: flex;
 }
 </style>

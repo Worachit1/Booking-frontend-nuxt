@@ -1,19 +1,18 @@
 <script setup>
 import { onMounted, computed } from "vue";
 import { useUserStore } from "@/store/userStore";
-import { useUserRoleStore } from "@/store/userRoleStore";
 import { useRouter, useRoute } from "vue-router";
 
+import LoadingPage from "~/components/Loading.vue";
 
 const route = useRoute();
 const router = useRouter();
 const userId = route.params.id || localStorage.getItem("user_id");
 
 const userStore = useUserStore();
-const userRoleStore = useUserRoleStore();
+const { isLoading } = storeToRefs(userStore);
 
 const user = computed(() => userStore.currentUser || null);
-const userRole = computed(() => userRoleStore.userRole || null);
 
 const handleImageError = (e) => {
   e.target.src = "/images/default-profile.jpg";
@@ -31,23 +30,26 @@ onMounted(async () => {
     localStorage.removeItem("reloaded");
     if (userId) {
       await userStore.getUserById(userId);
-      await userRoleStore.getUserRoleById(userId);
-      console.log("User data:", user.value);
-      console.log("User role data:", userRole.value);
     }
   }
 });
 </script>
 
 <template>
+  <LoadingPage v-if="isLoading" />
   <div v-if="user" class="profile-container">
     <!-- กล่องซ้าย -->
     <div class="profile-left">
-      <img :src="user.image_url || '/images/default-profile.jpg'" alt="Profile" class="profile-img"
-        @error="handleImageError" />
+      <img
+        :src="user.image_url || '/images/default-profile.jpg'"
+        alt="Profile"
+        class="profile-img"
+        @error="handleImageError"
+      />
       <p class="profile-name">{{ user.first_name }} {{ user.last_name }}</p>
       <p>อีเมล : {{ user.email }}</p>
       <p>ตำแหน่งงาน : {{ user.position_name || "—" }}</p>
+      <p>role: {{ user.role_name }}</p>
       <!-- <button class="edit-btn">✏️ แก้ไขรูป</button> -->
     </div>
 
@@ -57,17 +59,35 @@ onMounted(async () => {
       <div class="form-grid">
         <div>
           <label>ชื่อ</label>
-          <input disabled class="input-box" type="text" placeholder="กรอกชื่อ" :value="user.first_name" />
+          <input
+            disabled
+            class="input-box"
+            type="text"
+            placeholder="กรอกชื่อ"
+            :value="user.first_name"
+          />
         </div>
         <div>
           <label>นามสกุล</label>
-          <input disabled class="input-box" type="text" placeholder="กรอกนามสกุล" :value="user.last_name" />
+          <input
+            disabled
+            class="input-box"
+            type="text"
+            placeholder="กรอกนามสกุล"
+            :value="user.last_name"
+          />
         </div>
       </div>
       <div class="form-grid">
         <div>
           <label>เบอร์โทรศัพท์</label>
-          <input disabled class="input-box" type="text" placeholder="กรอกเบอร์โทรศัพท์" :value="user.phone || '—'" />
+          <input
+            disabled
+            class="input-box"
+            type="text"
+            placeholder="กรอกเบอร์โทรศัพท์"
+            :value="user.phone || '—'"
+          />
         </div>
       </div>
 
@@ -76,10 +96,6 @@ onMounted(async () => {
         <button @click="handleBackButton" class="btn-orange">กลับ</button>
       </div>
     </div>
-  </div>
-
-  <div v-else>
-    <p>กำลังโหลดข้อมูล...</p>
   </div>
 </template>
 

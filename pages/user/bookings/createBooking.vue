@@ -1,5 +1,11 @@
 <script setup>
 import { ref, onMounted } from "vue";
+
+import Swal from "sweetalert2";
+import "sweetalert2/dist/sweetalert2.min.css";
+
+import LoadingPage from "@/components/Loading.vue";
+
 import { useBookingStore } from "@/store/bookingStore";
 import { useRoomStore } from "@/store/roomStore";
 import { useBuildingStore } from "@/store/buildingStore";
@@ -15,7 +21,12 @@ const route = useRoute();
 const userId = route.params.id || localStorage.getItem("user_id");
 
 const bookingStore = useBookingStore();
+
+const userStore = useUserStore();
+const user = ref(null);
+
 const roomStore = useRoomStore();
+const { isLoading } = storeToRefs(bookingStore, roomStore, userStore);
 const buildingStore = useBuildingStore();
 const Booking = ref({
   title: "",
@@ -27,8 +38,7 @@ const Booking = ref({
   user_id: null,
   status: "Pending",
 });
-const userStore = useUserStore();
-const user = ref(null);
+
 
 const showMoadal = ref(false);
 
@@ -49,28 +59,35 @@ onMounted(async () => {
 });
 
 const handleConfirm = async () => {
-  if (!Booking.value.title.trim()) {
-    alert("กรุณากรอกชื่อการจอง");
-    return;
-  }
-  if (!Booking.value.room_id) {
-    alert("กรุณาเลือกห้อง");
-    return;
-  }
-  if (!Booking.value.start_time || !Booking.value.end_time) {
-    alert("กรุณาเลือกวันและเวลา");
-    return;
-  }
+  
   if (new Date(Booking.value.start_time) >= new Date(Booking.value.end_time)) {
-    alert("เวลาสิ้นสุดต้องมากกว่าเวลาเริ่มต้น");
+    await Swal.fire({
+      icon: "warning",
+      title: "❗ วันเวลาสิ้นสุดต้องมากกว่าวันเวลาเริ่ม",
+      text: "กรุณาเลือกวันและเวลาใหม่",
+      confirmButtonText: "ตกลง",
+      customClass: {
+        popup: "my-popup",
+        confirmButton: "btn-ok",
+      },
+    });
     return;
   }
+
   // ดักเพื่อไม่ให้ผู้ใช้จองเวลาในอดีต
   const now = new Date();
   const startTime = new Date(Booking.value.start_time);
-
   if (startTime < now) {
-    alert("❗ ไม่สามารถจองวันหรือเวลาในอดีตได้");
+    await Swal.fire({
+      icon: "warning",
+      title: "❗ ไม่สามารถจองในอดีตได้",
+      text: "กรุณาเลือกวันและเวลาใหม่",
+      confirmButtonText: "ตกลง",
+      customClass: {
+        popup: "my-popup",
+        confirmButton: "btn-ok",
+      },
+    });
     return;
   }
 
@@ -80,15 +97,24 @@ const handleConfirm = async () => {
     if (booking.status === "Approved" && booking.room_id === Booking.value.room_id) {
       const existingStart = new Date(booking.start_time * 1000); // แปลงเวลาเป็น milliseconds
       const existingEnd = new Date(booking.end_time * 1000); // แปลงเวลาเป็น milliseconds
-
       // ตรวจสอบว่ามีการทับซ้อนกับการจองที่มีอยู่
       return (startTime < existingEnd && startTime >= existingStart) || (new Date(Booking.value.end_time) > existingStart && new Date(Booking.value.end_time) <= existingEnd);
     }
     return false;
   });
 
+  // ดักการจองที่ทับซ้อน
   if (isOverlapping) {
-    alert("❗ ห้องนี้มีการจองในเวลาที่เลือกแล้ว โปรดเช็คเวลาอีกครั้ง");
+    await Swal.fire({
+      icon: "warning",
+      title: "❗ มีการจองห้องประชุมในช่วงเวลานี้แล้ว",
+      text: "กรุณาเลือกเวลาอื่น",
+      confirmButtonText: "ตกลง",
+      customClass: {
+        popup: "my-popup",
+        confirmButton: "btn-ok",
+      },
+    });
     return;
   }
 
@@ -100,29 +126,44 @@ const handleCreateBooking = async () => {
   try {
     // ตรวจสอบข้อมูลก่อนส่ง
     if (!Booking.value.user_id || !Booking.value.phone) {
-      alert("ไม่พบข้อมูลผู้จองหรือเบอร์โทร กรุณาเข้าสู่ระบบใหม่อีกครั้ง");
+      await Swal.fire({
+        icon: "warning",
+        title: "ไม่พบข้อมูลผู้จองหรือเบอร์โทร",
+        text: "กรุณาเข้าสู่ระบบใหม่อีกครั้ง",
+        confirmButtonText: "ตกลง",
+        customClass: {
+          popup: "my-popup",
+          confirmButton: "btn-ok",
+        },
+      });
       return;
     }
 
     const payload = {
       title: Booking.value.title.trim(),
       description: Booking.value.description.trim(),
-      start_time: Math.floor(
-        new Date(Booking.value.start_time).getTime()/1000
-      ), // ✅ seconds
-      end_time: Math.floor(new Date(Booking.value.end_time).getTime()/1000), // ✅ seconds
+      start_time: Math.floor(new Date(Booking.value.start_time).getTime() / 1000),
+      end_time: Math.floor(new Date(Booking.value.end_time).getTime() / 1000),
       room_id: Booking.value.room_id,
       user_id: Booking.value.user_id,
       phone: Booking.value.phone,
       status: Booking.value.status,
     };
 
-    console.log("📦 Payload:", payload);
+    // console.log("📦 Payload:", payload);
 
     const success = await bookingStore.addBooking(payload);
 
     if (success) {
-      alert("✅ สร้างการจองสำเร็จ");
+      await Swal.fire({
+        icon: "success",
+        title: "✅ สร้างการจองสำเร็จ",
+        confirmButtonText: "ตกลง",
+        customClass: {
+          popup: "my-popup",
+          confirmButton: "btn-ok",
+        },
+      });
       // เคลียร์ข้อมูลในฟอร์ม
       Booking.value = {
         title: "",
@@ -136,16 +177,33 @@ const handleCreateBooking = async () => {
         status: "Pending",
       };
       showMoadal.value = false;
-      navigateTo("/"); 
+      navigateTo("/");
     } else {
-      alert("❌ ไม่สามารถสร้างการจองได้");
+      await Swal.fire({
+        icon: "error",
+        title: "❌ ไม่สามารถสร้างการจองได้",
+        confirmButtonText: "ตกลง",
+        customClass: {
+          popup: "my-popup",
+          confirmButton: "btn-ok",
+        },
+      });
+      console.error("❌ Error creating booking: เพราะ มีเวลาซ้ำกกัน", error);
     }
   } catch (error) {
     console.error("❌ Error creating booking:", error);
     if (error.response) {
       console.error("📄 Backend Response Error:", error.response.data);
     }
-    alert("เกิดข้อผิดพลาดในการสร้างการจอง");
+    await Swal.fire({
+      icon: "error",
+      title: "เกิดข้อผิดพลาดในการสร้างการจอง",
+      confirmButtonText: "ตกลง",
+      customClass: {
+        popup: "my-popup",
+        confirmButton: "btn-ok",
+      },
+    });
   }
 };
 
@@ -155,6 +213,9 @@ const handleCancel = () => {
 </script>
 
 <template>
+  <teleport to="body"> 
+    <LoadingPage v-if="isLoading" />
+  </teleport>
   <div class="container">
     <h2 class="h2"><i class="fa-solid fa-location-pin "></i> จองห้องประชุม</h2>
     <form @submit.prevent="handleConfirm" class="booking-form">
@@ -203,7 +264,10 @@ const handleCancel = () => {
       <button type="submit" class="create">
         <i class="fa-solid fa-circle-plus "></i> สร้างการจอง
       </button>
+    </form>
+  </div>
 
+    <teleport to="body">  
       <!-- Modal -->
       <div v-if="showMoadal" class="modal-overlay">
         <div class="modal-content">
@@ -256,11 +320,12 @@ const handleCancel = () => {
           </div>
         </div>
       </div>
-    </form>
-  </div>
+    </teleport>
+  
 </template>
 
 <style scoped>
+
 @media (min-width: 1024px) {
   .modal-content {
     max-width: 700px;
@@ -393,76 +458,122 @@ textarea {
   transition: background-color 0.5s;
 }
 
+/* Modal overlay */
 .modal-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 115%;
-  background: rgba(0, 0, 0, 0.5);
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.5);
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(16px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
+/* กล่อง modal */
 .modal-content {
   position: relative;
-  background: white;
-  border-radius: 20px;
-  padding: 32px 36px;
-  width: 100%;
+  background-color: #ffffff;
+  border-radius: 16px;
+  width: 70%;
   max-width: 560px;
-  max-height: 85vh;
-  overflow-y: auto;
-  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.15);
-  animation: zoomIn 0.3s ease-out;
-  transition: all 0.3s ease;
   max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.2);
+  padding: 32px;
+  animation: fadeInUp 0.3s ease-out;
+  transition: all 0.3s ease;
   color: #1f2937;
+  margin-top: 45px;
 }
 
+/* ปิด modal */
+.cancel {
+  position: absolute;
+  top: 16px;
+  right: 20px;
+  background: transparent;
+  border: none;
+  font-size: 20px;
+  color: #333;
+  cursor: pointer;
+}
+
+.cancel:hover {
+  color: red;
+  transition: color 0.3s ease;
+}
+
+/* หัวข้อ modal */
 .modal-title {
-  font-size: 18px;
-  font-weight: 700;
-  text-align: center;
-  margin-bottom: 24px;
+  font-size: 20px;
+  font-weight: bold;
+  margin-bottom: 20px;
   color: #111827;
-  letter-spacing: -0.5px;
+  text-align: center;
 }
 
+/* เนื้อหา section */
 .modal-section {
-  margin-bottom: 20px;
+  margin-bottom: 16px;
 }
 
 .modal-section strong {
   display: block;
-  font-weight: 600;
   margin-bottom: 6px;
   color: #374151;
 }
 
+/* รายละเอียด */
 .detail {
-  background: #f9fafb;
+  background: #f3f4f6;
   border: 1px solid #e5e7eb;
   border-radius: 10px;
   padding: 12px 16px;
   color: #374151;
   font-size: 15px;
   line-height: 1.6;
-  transition: background 0.2s ease;
 }
 
-.detail:hover {
-  background: #f3f4f6;
+/* ปุ่มต่าง ๆ */
+.modal-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.confirm {
+  background-color: #04bd35;
+  color: white;
+  padding: 10px 18px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.confirm:hover {
+  background-color: #039d2b;
+  transition: background-color 0.3s;
+}
+
+/* Animation */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Responsive เพิ่มเติม */
+@media (min-width: 1024px) {
+  .modal-content {
+    padding: 40px;
+    max-width: 700px;
+  }
 }
 </style>

@@ -1,57 +1,53 @@
 <script setup>
-import { onMounted, ref, computed, watch , defineProps, defineEmits } from "vue";
+import { onMounted, ref, computed, defineProps, defineEmits } from "vue";
 import { useBuildingStore } from "@/store/buildingStore";
-import { useBuilding_RoomStore } from "~/store/building_roomStore";
-import { useUserRoleStore } from "~/store/userRoleStore";
+import { useUserStore } from "@/store/userStore";
 import { useRoute } from "vue-router";
 
 const route = useRoute();
 const userId = route.params.id || localStorage.getItem("user_id");
+const userRole =
+  route.params.role_name ??
+  localStorage.getItem("user_role_name") ??
+  "default_role";
 
 const props = defineProps({
   isSidebarOpen: Boolean,
 });
-
 const emit = defineEmits(["toggleSidebar"]);
 
 const buildingStore = useBuildingStore();
-const building_roomStore = useBuilding_RoomStore();
-const userRoleStore = useUserRoleStore();
+const userStore = useUserStore();
 
 const buildings = computed(() => buildingStore.buildings);
-const building_rooms = computed(() => building_roomStore.building_rooms);
-const currentUserRole = computed(() => userRoleStore.currentUserRole);
+const currentUser = computed(() => userStore.currentUser);
+const isAdmin = computed(() => currentUser.value?.role_name === "Admin");
 
 const isRoomDropdownOpen = ref(false);
 const openBuildingId = ref(null);
-const openRoomId = ref(null);
+const openRoomName = ref(null); // เปลี่ยนจาก id เป็นชื่อห้อง
 
 const toggleSidebar = () => {
   emit("toggleSidebar");
 };
 
-const filteredRooms = (buildingId) => {
-  return building_rooms.value.filter((br) => br.building_id === buildingId);
+// คืน array ของชื่อห้องจากแต่ละ building
+const filteredRooms = (building) => {
+  return building.rooms_name || [];
 };
 
-const toggleRoom = (roomId) => {
-  openRoomId.value = openRoomId.value === roomId ? null : roomId;
+const toggleRoom = (roomName) => {
+  openRoomName.value = openRoomName.value === roomName ? null : roomName;
 };
-
-const isAdmin = computed(() => currentUserRole.value?.[0]?.role_name === "Admin");
-const isRoleLoaded = ref(false);
 
 onMounted(async () => {
   await buildingStore.fetchBuildings();
-  await building_roomStore.fetchBuilding_Rooms();
 
   if (userId) {
-    await userRoleStore.getUserRoleById(userId);
-    isRoleLoaded.value = true;
+    await userStore.getUserById(userId);
   }
 });
 </script>
-
 
 <template>
   <div :class="['sidebar', { open: props.isSidebarOpen }]">
@@ -75,7 +71,12 @@ onMounted(async () => {
           <img
             src="/public/images/logo_sidebar.png"
             alt="menu"
-            style="width: 100px; height: 100px; object-fit: contain; margin-top: -15%"
+            style="
+              width: 100px;
+              height: 100px;
+              object-fit: contain;
+              margin-top: -15%;
+            "
           />
           <span style="font-size: 16px">BOOKING ROOM</span>
         </router-link>
@@ -88,44 +89,79 @@ onMounted(async () => {
       </router-link>
 
       <!-- เลือกห้อง Dropdown -->
-      <div class="home-link" @click="isRoomDropdownOpen = !isRoomDropdownOpen" style="cursor: pointer">
+      <div
+        class="home-link"
+        @click="isRoomDropdownOpen = !isRoomDropdownOpen"
+        style="cursor: pointer"
+      >
         <i class="fas fa-map-pin"></i> เลือกห้อง
-        <i :class="isRoomDropdownOpen ? 'fas fa-chevron-up ml-2' : 'fas fa-chevron-down ml-2'"></i>
+        <i
+          :class="
+            isRoomDropdownOpen
+              ? 'fas fa-chevron-up ml-2'
+              : 'fas fa-chevron-down ml-2'
+          "
+        ></i>
       </div>
 
       <!-- รายการอาคาร -->
       <ul v-if="isRoomDropdownOpen" class="dropdown-list">
         <li v-for="b in buildings" :key="b.id" class="dropdown-item">
-          <div class="building-name" @click="openBuildingId = openBuildingId === b.id ? null : b.id">
+          <div
+            class="building-name"
+            @click="openBuildingId = openBuildingId === b.id ? null : b.id"
+          >
             <i class="fa-solid fa-building"></i> {{ b.name }}
-            <i :class="openBuildingId === b.id ? 'fas fa-chevron-up' : 'fas fa-chevron-down'"></i>
+            <i
+              :class="
+                openBuildingId === b.id
+                  ? 'fas fa-chevron-up'
+                  : 'fas fa-chevron-down'
+              "
+            ></i>
           </div>
           <!-- รายการห้องในอาคาร -->
           <ul v-if="openBuildingId === b.id" class="dropdown-sub">
-            <li v-for="room in filteredRooms(b.id)" :key="room.building_room_id" class="dropdown-sub-item">
-              <div @click="toggleRoom(room.room_id)" class="room-link" style="cursor: pointer;">
-                <i class="fa-solid fa-archway"></i> {{ room.room_name }}
-                <i :class="openRoomId === room.room_id ? 'fas fa-chevron-up ml-1' : 'fas fa-chevron-down ml-1'"></i>
+            <li
+              v-for="room in b.rooms_name"
+              :key="room.id"
+              class="dropdown-sub-item"
+            >
+              <div
+                @click="
+                  openRoomName = openRoomName === room.name ? null : room.name
+                "
+                class="room-link"
+                style="cursor: pointer"
+              >
+                <i class="fa-solid fa-archway"></i> {{ room.name }}
+                <i
+                  :class="
+                    openRoomName === room.name
+                      ? 'fas fa-chevron-up ml-1'
+                      : 'fas fa-chevron-down ml-1'
+                  "
+                ></i>
               </div>
 
               <!-- ชั้นสอง: รายการภายใต้ห้องนั้น -->
-              <ul v-if="openRoomId === room.room_id" class="dropdown-sub-sub">
+              <ul v-if="openRoomName === room.name" class="dropdown-sub-sub">
                 <li>
                   <router-link
-                    :to="`/user/bookings/bookingroom/${room.room_id}`"
+                    :to="`/user/bookings/bookingroom/${room.id}`"
                     class="dropdown-sub-item"
                     exact-active-class="active-link"
-                    style="font-size: 12px;"
+                    style="font-size: 12px"
                   >
                     รายการจอง
                   </router-link>
                 </li>
                 <li>
                   <router-link
-                    :to="`/user/bookings/detailroom/${room.room_id}`"
+                    :to="`/user/bookings/detailroom/${room.id}`"
                     class="dropdown-sub-item"
                     exact-active-class="active-link"
-                    style="font-size: 12px;"
+                    style="font-size: 12px"
                   >
                     รายละเอียดห้อง
                   </router-link>
@@ -136,27 +172,47 @@ onMounted(async () => {
         </li>
       </ul>
 
-      <router-link to="/user/bookings/createBooking" class="home-link" exact-active-class="active-link">
+      <router-link
+        to="/user/bookings/createBooking"
+        class="home-link"
+        exact-active-class="active-link"
+      >
         <i class="fas fa-edit"></i> จองห้องประชุม
       </router-link>
 
-      <!-- เฉพาะ Admin  เท่านั้น -->
-      <div v-if="isRoleLoaded && isAdmin">
-        <router-link to="/admin/buildings" class="home-link" exact-active-class="active-link">
+      <!-- เฉพาะ Admin เท่านั้น -->
+      <div v-if="isAdmin">
+        <router-link
+          to="/admin/buildings"
+          class="home-link"
+          exact-active-class="active-link"
+        >
           <i class="fa-solid fa-pen-nib"></i> จัดการอาคาร
         </router-link>
-        <router-link to="/admin/rooms" class="home-link" exact-active-class="active-link">
+        <router-link
+          to="/admin/rooms"
+          class="home-link"
+          exact-active-class="active-link"
+        >
           <i class="fa-solid fa-pen-nib"></i> จัดการห้อง
         </router-link>
-        <router-link to="/admin/bookings" class="home-link" exact-active-class="active-link">
+        <router-link
+          to="/admin/bookings"
+          class="home-link"
+          exact-active-class="active-link"
+        >
           <i class="fas fa-receipt"></i> รายการจองห้อง
         </router-link>
       </div>
-      <div v-else>
-        <router-link :to="`/user/bookings/history/${userId}`" class="home-link" exact-active-class="active-link">
-          <i class="fas fa-history"></i> ประวัติการจอง
-        </router-link>
-      </div>
+
+      <!-- ประวัติการจอง (ทุกคนเห็นได้) -->
+      <router-link
+        :to="`/user/bookings/history/${userId}`"
+        class="home-link"
+        exact-active-class="active-link"
+      >
+        <i class="fas fa-history"></i> ประวัติการจอง
+      </router-link>
     </div>
   </div>
 </template>
@@ -170,7 +226,7 @@ onMounted(async () => {
   left: 0;
   top: 10px;
   transform: translateX(-100%);
-  transition: transform 1.2s ease;
+  transition: transform 0.85s ease;
   z-index: 1000;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
 }
@@ -295,4 +351,3 @@ onMounted(async () => {
   margin-right: 20px;
 }
 </style>
-

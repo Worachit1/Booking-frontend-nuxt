@@ -1,6 +1,10 @@
 <script setup>
 import { ref, onMounted } from "vue";
+import Swal from "sweetalert2";
+import "sweetalert2/dist/sweetalert2.min.css";
 import { useRoute, useRouter } from "vue-router";
+import LoadingPage from "~/components/Loading.vue";
+
 import { useRoomStore } from "~/store/roomStore";
 
 definePageMeta({
@@ -11,6 +15,7 @@ const route = useRoute();
 const router = useRouter();
 const roomId = route.params.id;
 const roomStore = useRoomStore();
+const { isLoading } = storeToRefs(roomStore);
 
 const room = ref(null);
 const editableRoom = ref({
@@ -31,9 +36,44 @@ const handleImageUpload = (event) => {
 
 const handleUpdate = async () => {
   if (!editableRoom.value.name?.trim()) {
-    alert("กรุณากรอกชื่อห้อง");
+    await Swal.fire({
+      icon: "warning",
+      title: "กรุณากรอกชื่อห้อง",
+      confirmButtonText: "ตกลง",
+      customClass: {
+        popup: "my-popup",
+        confirmButton: "btn-ok",
+      },
+    });
     return;
   }
+
+  if (!editableRoom.value.capacity) {
+    await Swal.fire({
+      icon: "warning",
+      title: "กรุณากรอกจำนวนที่นั่ง",
+      confirmButtonText: "ตกลง",
+      customClass: {
+        popup: "my-popup",
+        confirmButton: "btn-ok",
+      },
+    });
+    return;
+  }
+  const confirmResult = await Swal.fire({
+    title: `คุณต้องการอัปเดตข้อมูลห้อง <br>"${editableRoom.value.name}" ใช่ไหม?`,
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonText: "อัปเดต",
+    cancelButtonText: "ยกเลิก",
+    reverseButtons: true,
+    customClass: {
+      popup: "my-popup",
+      confirmButton: "btn-confirm-update",
+      cancelButton: "btn-cancel",
+    },
+  });
+    if (!confirmResult.isConfirmed) return;
 
   const formData = new FormData();
   formData.append("name", editableRoom.value.name || "");
@@ -44,12 +84,29 @@ const handleUpdate = async () => {
     formData.append("image_url", editableRoom.value.imageFile);
   }
 
-  const result = await roomStore.updateRoom(roomId, formData);
-  if (result) {
-    alert("อัปเดตข้อมูลห้องเรียบร้อยแล้ว");
+  const updateResult = await roomStore.updateRoom(roomId, formData);
+  
+  if (updateResult) {
+    await Swal.fire({
+      icon: "success",
+      title: "อัปเดตข้อมูลห้องเสร็จสิ้นแล้ว",
+      confirmButtonText: "ตกลง",
+      customClass: {
+        popup: "my-popup",
+        confirmButton: "btn-ok",
+      },
+    })
     router.back();
   } else {
-    alert("เกิดข้อผิดพลาดในการอัปเดต");
+     await Swal.fire({
+      icon: "error",
+      title: "เกิดข้อผิดพลาดในการแก้ไขข้อมูลห้อง",
+      confirmButtonText: "ตกลง",
+      customClass: {
+        popup: "my-popup",
+        confirmButton: "btn-ok",
+      },
+    })
   }
 };
 
@@ -66,6 +123,9 @@ onMounted(async () => {
 </script>
 
 <template>
+  <teleport to="body"> 
+    <LoadingPage v-if="isLoading" />
+  </teleport>
   <div class="container">
     <h1>แก้ไขข้อมูลห้อง</h1>
     <div class="form-group">
@@ -92,7 +152,7 @@ onMounted(async () => {
   </div>
 </template>
 
-<style scoped>
+<style  scoped>
 .container {
     max-width: 600px;
     margin: 0 auto;

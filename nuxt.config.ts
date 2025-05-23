@@ -21,8 +21,9 @@ export default defineNuxtConfig({
     },
   },
 
-  modules: ['@pinia/nuxt'],
+  modules: ['@pinia/nuxt',
 
+  ],
   build: {
     transpile: ['@pinia/nuxt'], // ทำการ transpile pinia module ให้ถูกต้อง
   },

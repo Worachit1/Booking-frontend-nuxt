@@ -1,43 +1,25 @@
 // middleware/loadUser.ts
 import { useUserStore } from "@/store/userStore";
-import { useUserRoleStore } from "@/store/userRoleStore";
 
 export default defineNuxtRouteMiddleware(async (to, from) => {
+  if (!process.client) return;
+
   const userStore = useUserStore();
-  const userRoleStore = useUserRoleStore();
-
-
-      const userId = localStorage.getItem("user_id");
+  const userId = localStorage.getItem("user_id");
 
   if (!userId) {
-    console.warn("⚠️ ไม่พบ user_id — redirect ไปหน้า /");
-
-    // ✅ หยุด redirect ถ้าอยู่ที่หน้า "/" อยู่แล้ว
     if (to.path !== "/") {
       alert("กรุณาเข้าสู่ระบบก่อน");
       return navigateTo("/");
     }
-    return; // อย่า redirect ซ้ำ
+    return;
   }
 
-  // โหลด user ถ้ายังไม่มี
   if (!userStore.currentUser || userStore.currentUser.id !== userId) {
     try {
       await userStore.getUserById(userId);
     } catch (err) {
       console.error("โหลด user ไม่สำเร็จ:", err);
-    }
-  }
-
-  // โหลด role ถ้ายังไม่มี
-  if (
-    !userRoleStore.currentUserRole ||
-    userRoleStore.currentUserRole.length === 0
-  ) {
-    try {
-      await userRoleStore.getUserRoleById(userId);
-    } catch (err) {
-      console.error("โหลด role ไม่สำเร็จ:", err);
     }
   }
 });

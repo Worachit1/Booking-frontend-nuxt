@@ -1,10 +1,12 @@
 <script setup>
 import { useRoute } from "vue-router";
+import LoadingPage from "@/components/Loading.vue";
 import { useBookingStore } from "@/store/bookingStore";
 import { useUserStore } from "@/store/userStore";
 import { ref, onMounted, computed } from "vue";
 import dayjs from "dayjs";
 import "dayjs/locale/th";
+import { storeToRefs } from "pinia";
 
 definePageMeta({
   middleware: ["load-user"],
@@ -12,7 +14,7 @@ definePageMeta({
 
 const formatDateTime = (date) => {
   const timestamp = date < 10000000000 ? date * 1000 : date;
-  return dayjs(timestamp).locale("th").format("D MMMM YYYY HH:mm:ss น.");
+  return dayjs(timestamp).locale("th").format("D MMMM YYYY เวลา HH:mm:ss น.");
 };
 
 const route = useRoute();
@@ -22,6 +24,8 @@ const bookingStore = useBookingStore();
 const userStore = useUserStore();
 const bookings = ref([]);
 const user = ref(null);
+
+const { isLoading } = storeToRefs(bookingStore, userStore);
 
 const statusMap = {
   Pending: "กำลังรอ...",
@@ -36,9 +40,9 @@ const selectedStatuses = ref([...allStatuses]);
 onMounted(async () => {
   try {
     await bookingStore.getBookingByuserId(userId);
-    bookings.value = bookingStore.bookings.sort(
-      (a, b) => b.created_at - a.created_at
-    );
+    bookings.value = Array.isArray(bookingStore.bookings)
+      ? bookingStore.bookings.sort((a, b) => b.created_at - a.created_at)
+      : [];
     await userStore.getUserById(userId);
     user.value = userStore.currentUser;
   } catch (error) {
@@ -47,6 +51,7 @@ onMounted(async () => {
 });
 
 const filteredBookings = computed(() => {
+  if (!Array.isArray(bookings.value)) return [];
   return bookings.value.filter(
     (b) =>
       (!b.deleted_at || b.deleted_at === 0) &&
@@ -66,72 +71,174 @@ const statusClass = (status) => {
 const openModal = (booking) => {
   console.log("เปิด modal ของ booking:", booking);
 };
+
+// Pagination
+const currentPage = ref(1);
+const itemsPerPage = 10;
+const jumpToPage = ref(currentPage.value);
+
+const totalPages = computed(() => {
+  return Math.ceil(filteredBookings.value.length / itemsPerPage);
+});
+
+const paginationRange = computed(() => {
+  const total = totalPages.value;
+  const current = currentPage.value;
+  const delta = 1;
+  const range = [];
+  for (let i = 1; i <= total; i++) {
+    if (
+      i === 1 ||
+      i === total ||
+      (i >= current - delta && i <= current + delta)
+    ) {
+      range.push(i);
+    } else if (range[range.length - 1] !== "...") {
+      range.push("...");
+    }
+  }
+  return range;
+});
+
+const paginatedBookings = computed(() => {
+  const start = (currentPage.value - 1) * itemsPerPage;
+  const end = start + itemsPerPage;
+  return filteredBookings.value.slice(start, end);
+});
+
+const gotoPage = (page) => {
+  if (
+    page === "..." ||
+    page < 1 ||
+    page > totalPages.value ||
+    page === currentPage.value
+  ) {
+    return;
+  }
+  currentPage.value = page;
+  jumpToPage.value = page;
+};
 </script>
 
 <template>
-  <div class="container my-5">
-    <h2 class="mb-2">
-      <i class="fa-solid fa-clock-rotate-left "></i> ประวัติการจองของคุณ
-    </h2>
+  <teleport to="body">
+    <LoadingPage v-if="isLoading" />
+  </teleport>
+  <div class="page-wrapper">
+    <div class="container">
+      <h2 class="mb-2">
+        <i class="fa-solid fa-clock-rotate-left"></i> ประวัติการจองของคุณ
+      </h2>
 
-    <!-- ตัวกรองสถานะ -->
-    <div class="status-filter mb-3">
-      <label class="filter-title">กรองตามสถานะ:</label>
-      <div class="status-option" v-for="status in allStatuses" :key="status">
-        <input
-          class="custom-checkbox"
-          type="checkbox"
-          :id="status"
-          :value="status"
-          v-model="selectedStatuses"
-        />
-        <label class="custom-label" :for="status">
-          {{ statusMap[status] }}
-        </label>
+      <!-- ตัวกรองสถานะ -->
+      <div class="status-filter mb-3">
+        <label class="filter-title">กรองตามสถานะ:</label>
+        <div class="status-option" v-for="status in allStatuses" :key="status">
+          <input
+            class="custom-checkbox"
+            type="checkbox"
+            :id="status"
+            :value="status"
+            v-model="selectedStatuses"
+          />
+          <label class="custom-label" :for="status">
+            {{ statusMap[status] }}
+          </label>
+        </div>
       </div>
-    </div>
 
-    <!-- รายการที่กรองแล้ว -->
-    <div v-if="filteredBookings.length">
-      <table class="table table-bordered table-hover">
-        <thead class="table-light">
-          <tr>
-            <th>วัน/เวลาที่จอง</th>
-            <th>ห้องที่จอง</th>
-            <th>เวลาเริ่ม</th>
-            <th>เวลาสิ้นสุด</th>
-            <th>สถานะ</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="(booking, index) in filteredBookings" :key="index">
-            <td>{{ formatDateTime(booking.created_at) }}</td>
-            <td>{{ booking.room_name }}</td>
-            <td>{{ formatDateTime(booking.start_time) }}</td>
-            <td>{{ formatDateTime(booking.end_time) }}</td>
-            <td>
-              <button
-                :class="statusClass(booking.status)"
-                :disabled="['Approved', 'Canceled'].includes(booking.status)"
-                @click="openModal(booking)"
-              >
-                {{ statusMap[booking.status] }}
-              </button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+      <!-- รายการที่กรองแล้ว -->
+      <div v-if="filteredBookings.length" class="booking-table-wrapper">
+        <table class="table table-bordered table-hover">
+          <thead class="table-light">
+            <tr>
+              <th>วัน/เวลาที่จอง</th>
+              <th>ห้องที่จอง</th>
+              <th>เวลาเริ่ม</th>
+              <th>เวลาสิ้นสุด</th>
+              <th>สถานะ</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="(booking, index) in paginatedBookings" :key="index">
+              <td>{{ formatDateTime(booking.created_at) }}</td>
+              <td>{{ booking.room_name }}</td>
+              <td>{{ formatDateTime(booking.start_time) }}</td>
+              <td>{{ formatDateTime(booking.end_time) }}</td>
+              <td>
+                <button
+                  :class="statusClass(booking.status)"
+                  :disabled="['Approved', 'Canceled'].includes(booking.status)"
+                  @click="openModal(booking)"
+                >
+                  {{ statusMap[booking.status] }}
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <!-- pagination control -->
+         <div class="pagination-bar">
+          <div class="pagination">
+          <button
+            :disabled="currentPage === 1"
+            @click="gotoPage(currentPage - 1)"
+          >
+            ก่อนหน้า
+          </button>
+
+          <button
+            v-for="page in paginationRange"
+            :key="page + '-btn'"
+            :class="{ active: page === currentPage }"
+            @click="gotoPage(page)"
+            :disabled="page === '...'"
+          >
+            {{ page }}
+          </button>
+
+          <button
+            :disabled="currentPage === totalPages"
+            @click="gotoPage(currentPage + 1)"
+          >
+            ถัดไป
+          </button>
+
+          <div class="page-jump">
+            <label>ไปหน้า:</label>
+            <input
+              type="number"
+              min="1"
+              :max="totalPages"
+              v-model.number="jumpToPage"
+              @keyup.enter="gotoPage(jumpToPage)"
+              :disabled="totalPages === 0"
+            />
+          </div>
+        </div>
+      </div>
+        
+      </div>
+
+      <div v-else class="no-data">ไม่มีรายการจองในขณะนี้</div>
     </div>
-    <div v-else class="alert alert-info">ไม่มีรายการจองในขณะนี้</div>
   </div>
 </template>
 
 <style scoped>
-.container {
-  margin: 20px;
+.page-wrapper {
+  min-height: 100vh;          
+  display: flex;
+  flex-direction: column;     
 }
 
-.mb-2{
+.container {
+  flex-grow: 1;
+  margin: 20px ;              
+}
+
+.mb-2 {
   text-decoration: underline;
 }
 
@@ -196,11 +303,9 @@ const openModal = (booking) => {
   font-weight: bold;
 }
 
-
 table {
   width: 100%;
   border-collapse: collapse;
-  margin-top: 20px;
 }
 
 .table {
@@ -232,8 +337,8 @@ button {
   border-radius: 5px;
   font-size: 14px;
   color: rgb(255, 239, 239);
+  cursor: pointer;
 }
-
 .btn-pending {
   background-color: #f9c749;
 }
@@ -265,4 +370,73 @@ button {
   background-color: #5a6268;
   transition: background-color 0.3s ease;
 }
+
+.booking-table-wrapper {
+  min-height: 400px; /* ✅ ปรับความสูงขั้นต่ำตามต้องการ */
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  border: 1px solid #ddd;
+  padding: 16px;
+  background-color: #fff;
+  border-radius: 8px;
+}
+
+.no-data {
+  text-align: center;
+  padding: 20px;
+  font-style: italic;
+  color: #888;
+}
+
+/* Pagination footer */
+.pagination {
+  display: flex;
+  justify-content: center; /* ทำให้ปุ่มเรียงตรงกลาง */
+  align-items: center;
+  flex-wrap: wrap; /* เผื่อปุ่มเยอะจะได้ไม่ล้น */
+  gap: 5px;
+  padding: 10px 0;
+  background-color: white;
+  border-top: 1px solid #ddd;
+}
+
+.pagination button {
+  padding: 6px 12px;
+  font-size: 14px;
+  cursor: pointer;
+  background-color: #13131f;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+}
+
+.pagination button:hover:not(:disabled) {
+  background-color: #444760;
+}
+
+.pagination button:disabled {
+  background-color: #e0e0e0;
+  color: #777;
+  cursor: not-allowed;
+  opacity: 1;
+}
+
+.pagination button.active {
+  background-color: #f5f5f5;
+  color: #13131f;
+  font-weight: bold;
+  border: 1px solid #ccc;
+}
+.pagination-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  padding: 1rem;
+  text-align: center;
+  z-index: 50;
+}
 </style>
+
