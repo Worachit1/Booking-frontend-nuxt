@@ -235,7 +235,7 @@ const gotoPage = (page) => {
 
 .container {
   flex-grow: 1;
-  margin: 20px ;              
+  margin: 10px ;              
 }
 
 .mb-2 {
@@ -434,7 +434,6 @@ button {
   bottom: 0;
   left: 0;
   width: 100%;
-  padding: 1rem;
   text-align: center;
   z-index: 50;
 }

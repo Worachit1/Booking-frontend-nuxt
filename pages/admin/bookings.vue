@@ -537,9 +537,9 @@ button {
 
 .pagination {
   display: flex;
-  justify-content: center; /* ทำให้ปุ่มเรียงตรงกลาง */
+  justify-content: center; 
   align-items: center;
-  flex-wrap: wrap; /* เผื่อปุ่มเยอะจะได้ไม่ล้น */
+  flex-wrap: wrap; 
   gap: 5px;
 }
 
@@ -573,10 +573,9 @@ button {
 }
 .pagination-bar {
   position: fixed;
-  bottom: -10;
   justify-content: center;
   width: 100%;
-  padding: 1rem;
+  margin-top: 5px;
   text-align: center;
   z-index: 50;
   display: flex;
