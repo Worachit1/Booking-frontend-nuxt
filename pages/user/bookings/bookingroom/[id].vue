@@ -158,6 +158,7 @@ const calendarOptions = computed(() => ({
     return { domNodes: [el] };
   },
 
+  dayMaxEvents: 2, // แสดงได้แค่ 2 เหตุการณ์ในแต่ละวัน
 }));
 function handleEventClick(info) {
   selectedEvent.value = info.event;

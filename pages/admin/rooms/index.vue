@@ -30,8 +30,11 @@ const handleDeleteRoom = async (room) => {
   await bookingStore.fetchAllBookings?.();
 
   const roomBookings = bookingStore.bookings.filter(
-    (booking) => booking.room_id === room.id && booking.status !== "Canceled"
-  );
+  (booking) =>
+    booking.room_id === room.id &&
+    booking.status !== "Canceled" &&
+    booking.status !== "Finished"
+);
 
   if (roomBookings.length > 0) {
     await Swal.fire({

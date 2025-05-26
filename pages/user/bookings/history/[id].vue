@@ -228,7 +228,7 @@ const gotoPage = (page) => {
 
 <style scoped>
 .page-wrapper {
-  min-height: 100vh;          
+  min-height: 110vh;          
   display: flex;
   flex-direction: column;     
 }
