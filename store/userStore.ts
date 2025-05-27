@@ -24,17 +24,20 @@ export const useUserStore = defineStore("user", {
                     headers,
                 });
                 if (response.status === 200) {
-                    this.users = response.data.data;
-                    // console.log("Users fetched successfully:", this.users);
+                    const data = response.data.data;
+                    this.users = data && data.length ? data : [];
                 } else {
+                    this.users = [];
                     console.error("Error fetching users:", response.statusText);
                 }
             } catch (error) {
+                this.users = [];
                 console.error("Error fetching users:", error);
-            }finally {
+            } finally {
                 this.isLoading = false;
             }
         },
+
         async getUserById(user_id: string) {
             const config = useRuntimeConfig();
             const token = localStorage.getItem("token") || null;
@@ -49,16 +52,19 @@ export const useUserStore = defineStore("user", {
                     this.currentUser = response.data.data;
                     return this.currentUser;
                 } else {
+                    this.currentUser = null;
                     console.error("Error fetching user:", response.statusText);
                     return null;
                 }
             } catch (error) {
+                this.currentUser = null;
                 console.error("Error fetching user:", error);
                 return null;
-            }finally {
+            } finally {
                 this.isLoading = false;
             }
         },
+
         async addUser(newUser: any) {
             this.isLoading = true;
             const config = useRuntimeConfig();
@@ -78,14 +84,15 @@ export const useUserStore = defineStore("user", {
                     },
                 });
                 if (response.status === 200) {
-                    // console.log("User added successfully:", response.data.data);
                     return response.data;
                 } else {
                     console.error("Error adding user:", response.statusText);
+                    return null;
                 }
             } catch (error) {
                 console.error("Error adding user:", error);
-            }finally{
+                return null;
+            } finally {
                 this.isLoading = false;
             }
         },
@@ -110,17 +117,19 @@ export const useUserStore = defineStore("user", {
                     },
                 });
                 if (response.status === 200) {
-                    // console.log("User updated successfully:", response.data.data);
                     return response.data;
                 } else {
                     console.error("Error updating user:", response.statusText);
+                    return null;
                 }
             } catch (error) {
                 console.error("Error updating user:", error);
-            }finally {
+                return null;
+            } finally {
                 this.isLoading = false;
             }
         },
+
         async deleteUser(user_id: string) {
             this.isLoading = true;
             const config = useRuntimeConfig();
@@ -132,14 +141,15 @@ export const useUserStore = defineStore("user", {
                     headers,
                 });
                 if (response.status === 200) {
-                    // console.log("User deleted successfully:", response.data.data);
                     return response.data;
                 } else {
                     console.error("Error deleting user:", response.statusText);
+                    return null;
                 }
             } catch (error) {
                 console.error("Error deleting user:", error);
-            }finally {
+                return null;
+            } finally {
                 this.isLoading = false;
             }
         },

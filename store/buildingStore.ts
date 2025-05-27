@@ -7,38 +7,47 @@ export const useBuildingStore = defineStore("building", {
   state: () => ({
     buildings: [],
     isLoading: false,
+    total: 0,
   }),
   actions: {
     async fetchBuildings() {
       this.isLoading = true;
+      let page = 1;
+      const size = 1000;
+      let allBuildings: any[] = [];
+
       try {
-        const response = await axios.get(
-          `${config.public.apiBase}/api/v1/buildings/list`
-        );
-        if (response.status === 200) {
-          this.buildings = response.data.data;
-        } else {
-          console.error("Error fetching buildings:", response.statusText);
+        while (true) {
+          const response = await axios.get(
+            `${config.public.apiBase}/api/v1/buildings/list`,
+            { params: { page, size } }
+          );
+          const data = response.data.data;
+          const pagination = response.data.pagination;
+
+          if (
+            !data ||
+            data.length === 0 ||
+            !pagination?.total ||
+            pagination.total === 0
+          ) {
+            break;
+          }
+
+          allBuildings.push(...data);
+
+          if (page * size >= pagination.total) break;
+          page++;
         }
+
+        this.buildings = allBuildings;
+        this.total = allBuildings.length;
+        return allBuildings;
       } catch (error) {
+        this.buildings = [];
+        this.total = 0;
         console.error("Error fetching buildings:", error);
-      } finally {
-        this.isLoading = false;
-      } 
-    },
-    async getById(id: string) {
-      this.isLoading = true;
-      try {
-        const response = await axios.get(
-          `${config.public.apiBase}/api/v1/buildings/${id}`
-        );
-        if (response.status === 200) {
-          return response.data.data;
-        } else {
-          console.error("Error fetching building:", response.statusText);
-        }
-      } catch (error) {
-        console.error("Error fetching building:", error);
+        return [];
       } finally {
         this.isLoading = false;
       }

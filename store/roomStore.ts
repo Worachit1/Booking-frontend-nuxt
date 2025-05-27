@@ -1,30 +1,34 @@
 import axios from "axios";
 import { defineStore } from "pinia";
-
-import type {Room} from "@/models/room.model";
+import type { Room } from "@/models/room.model";
 
 const config = useRuntimeConfig();
 
 export const useRoomStore = defineStore("room", {
   state: () => ({
-    rooms: [] as Room [],
+    rooms: [] as Room[],
     isLoading: false,
+    total: 0,
   }),
   actions: {
-    async fetchRooms() {
+    async fetchRooms(page = 1, size = 10) {
       this.isLoading = true;
       try {
         const response = await axios.get(
-          `${config.public.apiBase}/api/v1/rooms/list`
+          `${config.public.apiBase}/api/v1/rooms/list`,
+          { params: { page, size } }
         );
         if (response.status === 200) {
-          this.rooms = response.data.data;
-          // console.log("Rooms fetched successfully:", this.rooms);
+          this.rooms = response.data.data || [];
+          // แก้ตรงนี้ให้แน่ใจว่า total ได้ค่าจาก backend
+          this.total = response.data.pagination?.total || 0;
         } else {
-          console.error("Error fetching rooms:", response.statusText);
+          this.rooms = [];
+          this.total = 0;
         }
       } catch (error) {
-        console.error("Error fetching rooms:", error);
+        this.rooms = [];
+        this.total = 0;
       } finally {
         this.isLoading = false;
       }
@@ -36,15 +40,14 @@ export const useRoomStore = defineStore("room", {
           `${config.public.apiBase}/api/v1/rooms/${room_id}`
         );
         if (response.status === 200) {
-          // console.log("Room fetched successfully:", response.data.data);
-          return response.data.data; // ส่งกลับข้อมูลห้อง
+          return response.data.data;
         } else {
           console.error("Error fetching room:", response.statusText);
-          return null; // หากไม่พบข้อมูลห้อง
+          return null;
         }
       } catch (error) {
         console.error("Error fetching room:", error);
-        return null; // หากเกิดข้อผิดพลาด
+        return null;
       } finally {
         this.isLoading = false;
       }
@@ -59,11 +62,9 @@ export const useRoomStore = defineStore("room", {
         formData.append("description", newRoom.description);
         formData.append("capacity", newRoom.capacity.toString());
 
-        // ต้องส่ง key เป็น "image_url" ไม่ใช่ "image"
         if (newRoom.image_url instanceof File) {
           formData.append("image_url", newRoom.image_url);
         } else {
-          // ถ้าเป็น URL (rare case) ก็ส่งไป
           formData.append("image_url", newRoom.image_url);
         }
 
@@ -79,7 +80,7 @@ export const useRoomStore = defineStore("room", {
         );
 
         if (response.status === 200) {
-          // console.log("Room added successfully:", response.data.data);
+          // Optionally: await this.fetchRooms();
           return response.data;
         } else {
           console.error("Error adding room:", response.statusText);
@@ -110,7 +111,7 @@ export const useRoomStore = defineStore("room", {
         );
 
         if (response.status === 200) {
-          // console.log("Room updated successfully:", response.data.data);
+          // Optionally: await this.fetchRooms();
           return response.data;
         } else {
           console.error("Error updating room:", response.statusText);
@@ -137,7 +138,7 @@ export const useRoomStore = defineStore("room", {
           }
         );
         if (response.status === 200) {
-          // console.log("Room deleted successfully:", response.data.data);
+          // Optionally: await this.fetchRooms();
         } else {
           console.error("Error deleting room:", response.statusText);
         }

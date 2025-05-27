@@ -278,7 +278,7 @@ h1 {
 }
 
 .building-table input[type="text"] {
-  width: 50%;
+  width: 80%;
   padding: 8px;
   border: 1px solid #ccc;
   border-radius: 4px;

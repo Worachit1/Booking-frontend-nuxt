@@ -1,17 +1,15 @@
 <script setup>
-import { ref, onMounted } from "vue";
+import { ref, onMounted, computed, watch } from "vue";
 import Swal from "sweetalert2";
 import "sweetalert2/dist/sweetalert2.min.css";
-
 import LoadingPage from "@/components/Loading.vue";
-
 import { useRoomStore } from "@/store/roomStore";
 import { useBookingStore } from "~/store/bookingStore";
 import { useRouter } from "vue-router";
 
 const router = useRouter();
-definePageMeta({ 
-  middleware: ["load-user"] 
+definePageMeta({
+  middleware: ["load-user"],
 });
 
 const roomStore = useRoomStore();
@@ -21,20 +19,26 @@ const bookingStore = useBookingStore();
 const rooms = ref([]);
 const selectedRoom = ref(null);
 
+const page = ref(1);
+const size = ref(10);
+const total = ref(0);
+const jumpToPage = ref(1);
+
 const fetchRooms = async () => {
-  await roomStore.fetchRooms();
+  await roomStore.fetchRooms(page.value, size.value);
   rooms.value = roomStore.rooms;
+  total.value = roomStore.total || 0;
 };
 
 const handleDeleteRoom = async (room) => {
   await bookingStore.fetchAllBookings?.();
 
   const roomBookings = bookingStore.bookings.filter(
-  (booking) =>
-    booking.room_id === room.id &&
-    booking.status !== "Canceled" &&
-    booking.status !== "Finished"
-);
+    (booking) =>
+      booking.room_id === room.id &&
+      booking.status !== "Canceled" &&
+      booking.status !== "Finished"
+  );
 
   if (roomBookings.length > 0) {
     await Swal.fire({
@@ -88,6 +92,42 @@ const goTodetail = (id) => {
   router.push(`/admin/rooms/detail/${id}`);
 };
 
+const totalPages = computed(() => Math.ceil(total.value / size.value));
+
+const paginationRange = computed(() => {
+  const totalP = totalPages.value;
+  const current = page.value;
+  const delta = 1;
+  const range = [];
+  for (let i = 1; i <= totalP; i++) {
+    if (
+      i === 1 ||
+      i === totalP ||
+      (i >= current - delta && i <= current + delta)
+    ) {
+      range.push(i);
+    } else if (range[range.length - 1] !== "...") {
+      range.push("...");
+    }
+  }
+  return range;
+});
+
+const gotoPage = async (p) => {
+  if (
+    p === "..." ||
+    p === page.value ||
+    p < 1 ||
+    p > totalPages.value
+  ) {
+    return;
+  }
+  page.value = p;
+  jumpToPage.value = p;
+  await fetchRooms();
+};
+
+watch([page, size], fetchRooms);
 onMounted(async () => {
   await bookingStore.fetchBookings();
   await fetchRooms();
@@ -95,16 +135,13 @@ onMounted(async () => {
 </script>
 
 <template>
-  <teleport to="body"> 
+  <teleport to="body">
     <LoadingPage v-if="isLoading" />
   </teleport>
   <div class="container">
     <div class="header-row">
       <h1><i class="fa-solid fa-house-chimney"></i> รายการห้องประชุม</h1>
-      <button
-        class="btn-create"
-        @click="router.push('/admin/rooms/createRoom')"
-      >
+      <button class="btn-create" @click="router.push('/admin/rooms/createRoom')">
         <i class="fa-solid fa-circle-plus"></i> เพิ่มห้อง
       </button>
     </div>
@@ -120,7 +157,8 @@ onMounted(async () => {
         </tr>
       </thead>
       <tbody>
-        <tr v-for="room in rooms" :key="room.id" class="room-cell">
+        <tr v-for="(room, idx) in rooms" :key="room.id" class="room-cell"
+          :class="{ 'alt-row': rooms.length > 2 && idx % 2 === 1 }">
           <td>
             <img :src="room.image_url" alt="room" width="100" height="100" />
           </td>
@@ -140,6 +178,46 @@ onMounted(async () => {
     </table>
     <div v-else>ไม่มีห้องประชุมในระบบ</div>
   </div>
+    <!-- Pagination -->
+    <div v-if="totalPages > 1" class="pagination-bar">
+      <div class="pagination">
+        <button
+          :disabled="page === 1"
+          @click="gotoPage(page - 1)"
+        >
+          ก่อนหน้า
+        </button>
+
+        <button
+          v-for="p in paginationRange"
+          :key="p + '-btn'"
+          :class="{ active: p === page }"
+          @click="gotoPage(p)"
+          :disabled="p === '...'"
+        >
+          {{ p }}
+        </button>
+
+        <button
+          :disabled="page >= totalPages"
+          @click="gotoPage(page + 1)"
+        >
+          ถัดไป
+        </button>
+
+        <div class="page-jump">
+          <label>ไปหน้า:</label>
+          <input
+            type="number"
+            min="1"
+            :max="totalPages"
+            v-model.number="jumpToPage"
+            @keyup.enter="gotoPage(jumpToPage)"
+            :disabled="totalPages === 0"
+          />
+        </div>
+      </div>
+    </div>
 </template>
 
 <style scoped>
@@ -147,6 +225,15 @@ onMounted(async () => {
   padding: 15px;
   margin: 20px;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  padding-bottom: 80px;
+  height: calc(100vh - 110px); 
+  max-height: calc(100vh - 110px);
+  min-height: 400px; 
+  overflow-y: auto;
+  background: #fff; 
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
 }
 
 .header-row {
@@ -165,6 +252,7 @@ onMounted(async () => {
   text-align: center;
   vertical-align: middle;
 }
+
 .table {
   width: 100%;
   border-collapse: separate;
@@ -190,6 +278,9 @@ th {
 
 tr:hover {
   background-color: #f2f2f2;
+}
+.alt-row {
+  background-color: #d0d3d880 !important;
 }
 
 img {
@@ -311,4 +402,65 @@ h1 {
 .modal-actions button {
   margin: 10px;
 }
+
+.pagination-bar {
+  position: fixed;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  background: #fafafa;
+  box-shadow: 0 -2px 8px rgba(0,0,0,0.05);
+  justify-content: center;
+  text-align: center;
+  z-index: 100;
+  display: flex;
+  padding: 12px 0;
+}
+
+.pagination {
+  display: flex;
+  justify-content: center; 
+  align-items: center;
+  flex-wrap: wrap; 
+  gap: 5px;
+}
+.pagination button {
+  padding: 6px 12px;
+  font-size: 14px;
+  cursor: pointer;
+  background-color: #13131f;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+}
+.pagination button:hover:not(:disabled) {
+  background-color: #444760;
+}
+.pagination button:disabled {
+  background-color: #e0e0e0;
+  color: #777;
+  cursor: not-allowed;
+  opacity: 1;
+}
+.pagination button.active {
+  background-color: #f5f5f5;
+  color: #13131f;
+  font-weight: bold;
+  border: 1px solid #ccc;
+}
+.page-jump {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 10px;
+}
+.page-jump input {
+  width: 50px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+  text-align: center;
+}
 </style>
+

@@ -2,6 +2,8 @@
 import { ref } from 'vue';
 import { useAuthStore } from '@/store/authStore';
 import { useRouter } from 'vue-router';
+import Swal from "sweetalert2";
+import "sweetalert2/dist/sweetalert2.min.css";
 
 const emit = defineEmits(['close', 'open-register']);
 
@@ -25,14 +27,18 @@ const login = async () => {
             console.error("User ID is not available");
             return;
         }
+        closeModal(); // ปิด modal ทันทีหลัง login สำเร็จ
+        await Swal.fire({
+            title: 'เข้าสู่ระบบสำเร็จ',
+            text: `ยินดีต้อนรับ ${user.first_name} ${user.last_name}`,
+            icon: 'success',
+        });
         router.push(`/user/profile/${user.id}`);
-        closeModal();
     } catch (err) {
         console.error("Login error:", err);
         error.value = 'เข้าสู่ระบบไม่สำเร็จ: ' + err.message;
     }
 };
-
 const openRegisterModal = () => {
     isModalOpen.value = false;
     showRegisterModal.value = true;

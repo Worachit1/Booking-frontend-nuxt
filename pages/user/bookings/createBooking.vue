@@ -7,12 +7,15 @@ import "sweetalert2/dist/sweetalert2.min.css";
 import LoadingPage from "@/components/Loading.vue";
 
 import { useBookingStore } from "@/store/bookingStore";
-import { useRoomStore } from "@/store/roomStore";
 import { useBuildingStore } from "@/store/buildingStore";
 import { useUserStore } from "@/store/userStore";
 import { useRoute } from "vue-router";
 import dayjs from "dayjs";
 import "dayjs/locale/th";
+
+import { ElSelect, ElOption } from "element-plus";
+import "element-plus/dist/index.css";
+
 definePageMeta({
   middleware: ["load-user"], // Corrected middleware name
 });
@@ -25,8 +28,7 @@ const bookingStore = useBookingStore();
 const userStore = useUserStore();
 const user = ref(null);
 
-const roomStore = useRoomStore();
-const { isLoading } = storeToRefs(bookingStore, roomStore, userStore);
+const { isLoading } = storeToRefs(bookingStore, userStore);
 const buildingStore = useBuildingStore();
 const Booking = ref({
   title: "",
@@ -39,11 +41,28 @@ const Booking = ref({
   status: "Pending",
 });
 
+const filteredRooms = computed(() => {
+  if (!Booking.value.building_id) return [];
+  const building = buildingStore.buildings.find(
+    (b) => b.id === Booking.value.building_id
+  );
+  return building?.rooms_name || [];
+});
 
+watch(
+  () => Booking.value.building_id,
+  (newVal) => {
+    const building = buildingStore.buildings.find(b => b.id === newVal);
+    if (building && building.rooms_name && building.rooms_name.length > 0) {
+      Booking.value.room_id = building.rooms_name[0].id;
+    } else {
+      Booking.value.room_id = null;
+    }
+  }
+);
 const showMoadal = ref(false);
 
 onMounted(async () => {
-  await roomStore.fetchRooms();
   await buildingStore.fetchBuildings();
 
   if (userId) {
@@ -59,7 +78,6 @@ onMounted(async () => {
 });
 
 const handleConfirm = async () => {
-  
   if (new Date(Booking.value.start_time) >= new Date(Booking.value.end_time)) {
     await Swal.fire({
       icon: "warning",
@@ -92,13 +110,21 @@ const handleConfirm = async () => {
   }
 
   // ตรวจสอบเวลาทับซ้อนกับการจองที่มีสถานะเป็น "Approved"
-  await bookingStore.fetchBookings();  // ดึงข้อมูลการจองทั้งหมด
-  const isOverlapping = bookingStore.bookings.some(booking => {
-    if (booking.status === "Approved" && booking.room_id === Booking.value.room_id) {
+  await bookingStore.fetchBookings(); // ดึงข้อมูลการจองทั้งหมด
+  const isOverlapping = bookingStore.bookings.some((booking) => {
+    if (
+      booking.status === "Approved" ||
+      (booking.status === "Pending" &&
+        booking.room_id === Booking.value.room_id)
+    ) {
       const existingStart = new Date(booking.start_time * 1000); // แปลงเวลาเป็น milliseconds
       const existingEnd = new Date(booking.end_time * 1000); // แปลงเวลาเป็น milliseconds
       // ตรวจสอบว่ามีการทับซ้อนกับการจองที่มีอยู่
-      return (startTime < existingEnd && startTime >= existingStart) || (new Date(Booking.value.end_time) > existingStart && new Date(Booking.value.end_time) <= existingEnd);
+      return (
+        (startTime < existingEnd && startTime >= existingStart) ||
+        (new Date(Booking.value.end_time) > existingStart &&
+          new Date(Booking.value.end_time) <= existingEnd)
+      );
     }
     return false;
   });
@@ -121,7 +147,6 @@ const handleConfirm = async () => {
   showMoadal.value = true;
 };
 
-
 const handleCreateBooking = async () => {
   try {
     // ตรวจสอบข้อมูลก่อนส่ง
@@ -142,7 +167,9 @@ const handleCreateBooking = async () => {
     const payload = {
       title: Booking.value.title.trim(),
       description: Booking.value.description.trim(),
-      start_time: Math.floor(new Date(Booking.value.start_time).getTime() / 1000),
+      start_time: Math.floor(
+        new Date(Booking.value.start_time).getTime() / 1000
+      ),
       end_time: Math.floor(new Date(Booking.value.end_time).getTime() / 1000),
       room_id: Booking.value.room_id,
       user_id: Booking.value.user_id,
@@ -213,11 +240,11 @@ const handleCancel = () => {
 </script>
 
 <template>
-  <teleport to="body"> 
+  <teleport to="body">
     <LoadingPage v-if="isLoading" />
   </teleport>
   <div class="container">
-    <h2 class="h2"><i class="fa-solid fa-location-pin "></i> จองห้องประชุม</h2>
+    <h2 class="h2"><i class="fa-solid fa-location-pin"></i> จองห้องประชุม</h2>
     <form @submit.prevent="handleConfirm" class="booking-form">
       <div class="form-row">
         <div class="form-group">
@@ -226,106 +253,184 @@ const handleCancel = () => {
         </div>
         <div class="form-group">
           <label for="start_time">วันเวลาเริ่มจอง:</label>
-          <input id="start_time" v-model="Booking.start_time" type="datetime-local" required />
+          <input
+            id="start_time"
+            v-model="Booking.start_time"
+            type="datetime-local"
+            required
+          />
         </div>
         <div class="form-group">
           <label for="end_time">วันเวลาสิ้นสุดการจอง:</label>
-          <input id="end_time" v-model="Booking.end_time" type="datetime-local" required />
+          <input
+            id="end_time"
+            v-model="Booking.end_time"
+            type="datetime-local"
+            required
+          />
         </div>
       </div>
 
       <div class="form-row">
         <div class="form-group">
+          <label for="building_id">อาคาร:</label>
+          <el-select
+            v-model="Booking.building_id"
+            placeholder="--- กรุณาเลือกอาคาร ---"
+            style="width: 100%"
+            filterable
+            required
+          >
+            <el-option
+              v-for="building in buildingStore.buildings"
+              :key="building.id"
+              :label="building.name"
+              :value="building.id"
+            />
+          </el-select>
+        </div>
+        <div class="form-group">
           <label for="room_id">ห้องที่จอง:</label>
-          <select id="room_id" v-model="Booking.room_id" required>
-            <option v-for="room in roomStore.rooms" :key="room.id" :value="room.id">
-              {{ room.name }}
-            </option>
-          </select>
+          <el-select
+            v-model="Booking.room_id"
+            placeholder="--- กรุณาเลือกห้อง ---"
+            style="width: 100%"
+            filterable
+            :disabled="!Booking.building_id"
+            required
+          >
+            <el-option
+              v-for="room in filteredRooms"
+              :key="room.id"
+              :label="room.name"
+              :value="room.id"
+            />
+          </el-select>
         </div>
         <div v-if="user" class="form-group">
           <label for="user_id">ผู้ที่จองห้องประชุม:</label>
-          <input disabled id="user" :value="user.first_name + ' ' + user.last_name" type="text" required
-            style="color: #c2c4c3" />
+          <input
+            disabled
+            id="user"
+            :value="user.first_name + ' ' + user.last_name"
+            type="text"
+            required
+            style="color: #c2c4c3"
+          />
         </div>
         <div v-if="user" class="form-group">
           <label for="phone">เบอร์ติดต่อ:</label>
-          <input disabled id="phone" :value="user.phone" type="text" required style="color: #c2c4c3" />
+          <input
+            disabled
+            id="phone"
+            :value="user.phone"
+            type="text"
+            required
+            style="color: #c2c4c3"
+          />
         </div>
       </div>
 
       <div class="form-row">
         <div class="form-group">
           <label for="description">รายละเอียดการประชุม:</label>
-          <textarea id="description" v-model="Booking.description" required></textarea>
+          <textarea
+            id="description"
+            v-model="Booking.description"
+            required
+          ></textarea>
         </div>
       </div>
 
       <button type="submit" class="create">
-        <i class="fa-solid fa-circle-plus "></i> สร้างการจอง
+        <i class="fa-solid fa-circle-plus"></i> สร้างการจอง
       </button>
     </form>
   </div>
 
-    <teleport to="body">  
-      <!-- Modal -->
-      <div v-if="showMoadal" class="modal-overlay">
-        <div class="modal-content">
-          <h3 class="modal-title"><i class="fa-solid fa-circle-info "></i> รายละเอียดการจองประชุม</h3>
+  <teleport to="body">
+    <!-- Modal -->
+    <div v-if="showMoadal" class="modal-overlay">
+      <div class="modal-content">
+        <h3 class="modal-title">
+          <i class="fa-solid fa-circle-info"></i> รายละเอียดการจองประชุม
+        </h3>
 
-          <div class="modal-section">
-            <p><strong><i class="fa-solid fa-handshake "></i> หัวข้อการประชุม:</strong></p>
-            <p class="detail">{{ Booking.title }}</p>
-          </div>
+        <div class="modal-section">
+          <p>
+            <strong
+              ><i class="fa-solid fa-handshake"></i> หัวข้อการประชุม:</strong
+            >
+          </p>
+          <p class="detail">{{ Booking.title }}</p>
+        </div>
 
-          <div class="modal-section">
-            <p><strong><i class="fa-solid fa-circle-info "></i> รายละเอียดการประชุม:</strong></p>
-            <p class="detail">{{ Booking.description }}</p>
-          </div>
+        <div class="modal-section">
+          <p>
+            <strong
+              ><i class="fa-solid fa-circle-info"></i>
+              รายละเอียดการประชุม:</strong
+            >
+          </p>
+          <p class="detail">{{ Booking.description }}</p>
+        </div>
 
-          <div class="modal-section">
-            <p><strong><i class="fa-solid fa-clock "></i> วันที่เริ่ม - สิ้นสุด กิจกรรม:</strong></p>
-            <p class="detail">
-             ตั้งแต่ {{ dayjs(Booking.start_time).format("DD/MM/YYYY HH:mm") }} ถึง {{ dayjs(Booking.end_time).format("DD/MM/YYYY HH:mm") }} น.
-            </p>
-          </div>
+        <div class="modal-section">
+          <p>
+            <strong
+              ><i class="fa-solid fa-clock"></i> วันที่เริ่ม - สิ้นสุด
+              กิจกรรม:</strong
+            >
+          </p>
+          <p class="detail">
+            ตั้งแต่
+            {{ dayjs(Booking.start_time).format("DD/MM/YYYY HH:mm") }} ถึง
+            {{ dayjs(Booking.end_time).format("DD/MM/YYYY HH:mm") }} น.
+          </p>
+        </div>
 
-          <div class="form-group">
-            <label for="user"><i class="fa-solid fa-user "></i> ผู้ที่จองห้องประชุม:</label>
-            <p class="detail">
-              {{ user.first_name + " " + user.last_name }}
-            </p>
-          </div>
+        <div class="form-group">
+          <label for="user"
+            ><i class="fa-solid fa-user"></i> ผู้ที่จองห้องประชุม:</label
+          >
+          <p class="detail">
+            {{ user.first_name + " " + user.last_name }}
+          </p>
+        </div>
 
-          <div class="modal-section">
-            <p><strong><i class="fa-solid fa-phone "></i> เบอร์ติดต่อ:</strong></p>
-            <p class="detail">{{ user.phone }}</p>
-          </div>
+        <div class="modal-section">
+          <p>
+            <strong><i class="fa-solid fa-phone"></i> เบอร์ติดต่อ:</strong>
+          </p>
+          <p class="detail">{{ user.phone }}</p>
+        </div>
 
-          <div class="modal-section">
-            <p><strong><i class="fa-solid fa-house "></i> ห้องประชุม:</strong></p>
-            <p class="detail">
-              {{
-                roomStore.rooms.find((room) => room.id === Booking.room_id)
-                  ?.name
-              }}
-            </p>
-          </div>
+        <div class="modal-section">
+          <p>
+            <strong><i class="fa-solid fa-house"></i> ห้องประชุม:</strong>
+          </p>
+          <p class="detail">
+            {{
+              filteredRooms.find((room) => room.id === Booking.room_id)?.name ||
+              "-"
+            }}
+          </p>
+        </div>
 
-          <div class="modal-buttons">
-            <button @click="handleCreateBooking" class="confirm">
-              ยืนยันการจอง
-            </button>
-            <button @click="handleCancel" class="cancel"><i class="fa-solid fa-xmark "></i></button>
-          </div>
+        <div class="modal-buttons">
+          <button @click="handleCreateBooking" class="confirm">
+            ยืนยันการจอง
+          </button>
+          <button @click="handleCancel" class="cancel">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
         </div>
       </div>
-    </teleport>
-  
+    </div>
+  </teleport>
 </template>
 
 <style scoped>
-
 @media (min-width: 1024px) {
   .modal-content {
     max-width: 700px;
@@ -350,8 +455,6 @@ const handleCancel = () => {
   width: 90%;
   max-width: 800px;
 }
-
-
 
 .h2 {
   color: #13131f;

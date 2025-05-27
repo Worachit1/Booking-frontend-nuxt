@@ -172,11 +172,15 @@ onUnmounted(() => {
   <div v-if="!isLoading" class="header">
     <div class="profile-wrapper" ref="profileWrapperRef">
       <div class="profile">
-        <!-- กระดิ่ง -->
-        <div class="bell" @click="toggleBookings">
+        <!-- กระดิ่ง: แสดงเฉพาะ Admin -->
+        <div
+          v-if="currentUserRole === 'Admin'"
+          class="bell"
+          @click="toggleBookings"
+        >
           <i class="fas fa-bell"></i>
           <span
-            v-if="hasPendingBookings || hasUserBookings"
+            v-if="hasPendingBookings"
             class="notification-dot"
           ></span>
         </div>
@@ -206,43 +210,7 @@ onUnmounted(() => {
               </li>
             </router-link>
           </ul>
-
-          <!-- User -->
-          <ul v-else>
-            <li
-              v-for="(booking, index) in statusUserBookings"
-              :key="index"
-              class="booking"
-            >
-              <p class="room_name">{{ booking.room_name }}</p>
-              <p
-                :class="{
-                  'text-green': booking.status === 'Approved',
-                  'text-red': booking.status === 'Canceled',
-                }"
-              >
-                {{
-                  "การจองของคุณ" +
-                  (booking.status === "Approved"
-                    ? "ได้รับการอนุมัติแล้ว"
-                    : "ถูกปฏิเสธ")
-                }}
-              </p>
-              <p>
-                {{ formatDateTime(booking.start_time) }} ถึง<br />
-                {{ formatDateTime(booking.end_time) }}
-              </p>
-
-              <!-- ปุ่มรับทราบ -->
-              <button
-                v-if="!acknowledgedBookings.includes(booking.id)"
-                @click="acknowledgeBooking(booking.id)"
-              >
-                รับทราบ
-              </button>
-              <p>------------------------------</p>
-            </li>
-          </ul>
+          <!-- (User ไม่เห็น bell และ dropdown นี้) -->
         </div>
 
         <img

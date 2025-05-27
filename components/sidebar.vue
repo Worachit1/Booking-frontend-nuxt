@@ -35,11 +35,9 @@ const toggleSidebar = () => {
 const filteredRooms = (building) => {
   return building.rooms_name || [];
 };
-
 const toggleRoom = (roomName) => {
   openRoomName.value = openRoomName.value === roomName ? null : roomName;
 };
-
 onMounted(async () => {
   await buildingStore.fetchBuildings();
 
@@ -47,6 +45,27 @@ onMounted(async () => {
     await userStore.getUserById(userId);
   }
 });
+
+// Tooltip เพื่อแสดงข้อความเมื่อ hover
+const tooltipText = ref("");
+const tooltipVisible = ref(false);
+const tooltipX = ref(0);
+const tooltipY = ref(0);
+let tooltipTimeout = null;
+
+function showTooltip(text, event) {
+  clearTimeout(tooltipTimeout);
+  tooltipTimeout = setTimeout(() => {
+    tooltipText.value = text;
+    tooltipVisible.value = true;
+    tooltipX.value = event.clientX + 10;
+    tooltipY.value = event.clientY + 10;
+  }, 300); // ดีเลย์ 300ms
+}
+function hideTooltip() {
+  clearTimeout(tooltipTimeout);
+  tooltipVisible.value = false;
+}
 </script>
 
 <template>
@@ -110,6 +129,9 @@ onMounted(async () => {
           <div
             class="building-name"
             @click="openBuildingId = openBuildingId === b.id ? null : b.id"
+            @mouseenter="showTooltip(b.name, $event)"
+            @mouseleave="hideTooltip"
+            @mousemove="showTooltip(b.name, $event)"
           >
             <i class="fa-solid fa-building"></i> {{ b.name }}
             <i
@@ -133,6 +155,9 @@ onMounted(async () => {
                 "
                 class="room-link"
                 style="cursor: pointer"
+                @mouseenter="showTooltip(room.name, $event)"
+                @mouseleave="hideTooltip"
+                @mousemove="showTooltip(room.name, $event)"
               >
                 <i class="fa-solid fa-archway"></i> {{ room.name }}
                 <i
@@ -214,6 +239,14 @@ onMounted(async () => {
         <i class="fas fa-history"></i> ประวัติการจอง
       </router-link>
     </div>
+    <!-- Custom Tooltip Modal -->
+    <div
+      v-if="tooltipVisible"
+      class="custom-tooltip"
+      :style="{ left: tooltipX + 'px', top: tooltipY + 'px' }"
+    >
+      {{ tooltipText }}
+    </div>
   </div>
 </template>
 
@@ -233,6 +266,11 @@ onMounted(async () => {
 
 .sidebar.open {
   transform: translateX(0);
+}
+.sidebar-content {
+  padding: 20px;
+  max-height: calc(100vh - 40px); /* ปรับตาม header/sidebar */
+  overflow-y: auto;
 }
 
 .toggle-btn {
@@ -326,6 +364,16 @@ onMounted(async () => {
   background-color: #4a4a72;
   transition: background-color 0.2s ease, color 0.2s ease;
 }
+.building-name,
+.room-link {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 140px; /* ปรับตามความกว้าง sidebar */
+  display: inline-block;
+  vertical-align: middle;
+  cursor: pointer;
+}
 
 .dropdown-sub {
   list-style: none;
@@ -349,5 +397,22 @@ onMounted(async () => {
   color: inherit;
   font-size: 14px;
   margin-right: 20px;
+}
+
+/* Custom Tooltip Modal */
+.custom-tooltip {
+  position: fixed;
+  z-index: 9999;
+  background: #fff;
+  color: #222;
+  padding: 5px 10px;
+  border-radius: 6px;
+  font-size: 14px;
+  pointer-events: none;
+  white-space: nowrap;      /* บรรทัดเดียว */
+  max-width: 400px;         /* ปรับความยาวสูงสุดตามต้องการ */
+  overflow-x: auto;         /* เลื่อนแนวนอนได้ถ้ายาวเกิน */
+  box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+  opacity: 0.97;
 }
 </style>

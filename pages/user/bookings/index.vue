@@ -207,7 +207,7 @@ onMounted(() => {
             <strong>สิ้นสุด:</strong>
             {{ dayjs(selectedEvent?.end).format("DD/MM/YYYY HH:mm") }}น.
           </p>
-        </div>
+        </div>อออออออออออ
         <div class="popup-footer">
           <button @click="closePopup">ปิด</button>
         </div>

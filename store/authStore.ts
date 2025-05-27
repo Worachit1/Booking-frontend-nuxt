@@ -1,53 +1,47 @@
 import axios from "axios";
 import { defineStore } from "pinia";
-
 import type { User } from "@/models/user.model";
 
+
 const config = useRuntimeConfig();
-
-
 
 export const useAuthStore = defineStore("auth", {
     state: () => ({
         user: null as User | null,
         isLoading: false,
         token: null as string | null,
+        showLoginModal: false, // เพิ่ม state นี้
     }),
     actions: {
+        openLoginModal() {
+            this.showLoginModal = true;
+        },
+        closeLoginModal() {
+            this.showLoginModal = false;
+        },
         async login(payload: { email: string; password: string }) {
             this.isLoading = true;
             try {
-                console.log("Login Payload:", payload);
-
                 const response = await axios.post(
                     `${config.public.apiBase}/api/v1/login`,
                     payload,
                     { withCredentials: true }
                 );
-
-                console.log("Login Response:", response.data);
-
                 const user = response.data.user;
                 const token = response.data.token;
-
                 if (!user || !token) {
                     throw new Error("ข้อมูลผู้ใช้ไม่สมบูรณ์");
                 }
-
-                // จัดเก็บ token ใน localStorage ถ้าต้องการให้ใช้ใน session ถัดไป
                 localStorage.setItem("token", token);
                 localStorage.setItem("user_id", user.id);
-
                 this.user = user;
                 this.token = token;
-
-                // localStorage.setItem("token", token);
-                // console.log("Token saved to localStorage:", token);
+                this.closeLoginModal(); // ปิด modal หลัง login สำเร็จ
                 return user;
             } catch (error: any) {
                 console.error("Login error:", error);
                 throw new Error(error.response?.data?.message || "เข้าสู่ระบบไม่สำเร็จ");
-            }finally{
+            } finally {
                 this.isLoading = false;
             }
         },
@@ -62,10 +56,8 @@ export const useAuthStore = defineStore("auth", {
                         },
                     }
                 );
-                console.log("Logout successfully");
                 this.user = null;
                 this.token = null;
-
                 localStorage.removeItem("token");
                 localStorage.removeItem("user_id");
                 localStorage.removeItem("user_email");
@@ -77,7 +69,6 @@ export const useAuthStore = defineStore("auth", {
                 console.error("Logout error:", error);
             }
         },
-
         async register(newUser: User) {
             try {
                 const formData = new FormData();
@@ -87,13 +78,11 @@ export const useAuthStore = defineStore("auth", {
                 formData.append("password", newUser.password);
                 formData.append("position_name", newUser.position_name);
                 formData.append("phone", newUser.phone);
-
                 if (newUser.image_url instanceof File) {
                     formData.append("image_url", newUser.image_url);
                 } else {
                     formData.append("image_url", newUser.image_url);
                 }
-
                 const response = await axios.post(
                     `${config.public.apiBase}/api/v1/users/register`,
                     formData,
@@ -104,9 +93,7 @@ export const useAuthStore = defineStore("auth", {
                         },
                     }
                 );
-
                 if (response.status === 200 && response.data.data) {
-                    // console.log("User registered:", response.data.data);
                     return response.data.data;
                 } else {
                     console.error("Registration failed:", response.statusText);

@@ -6,7 +6,6 @@ import { useUserStore } from "@/store/userStore";
 import { ref, onMounted, computed } from "vue";
 import dayjs from "dayjs";
 import "dayjs/locale/th";
-import { storeToRefs } from "pinia";
 
 definePageMeta({
   middleware: ["load-user"],
@@ -25,7 +24,9 @@ const userStore = useUserStore();
 const bookings = ref([]);
 const user = ref(null);
 
-const { isLoading } = storeToRefs(bookingStore, userStore);
+const { isLoading: userLoading } = storeToRefs(userStore);
+const { isLoading: bookingLoading } = storeToRefs(bookingStore);
+const isLoadingPage = computed(() => userLoading.value || bookingLoading.value);
 
 const statusMap = {
   Pending: "กำลังรอ...",
@@ -122,7 +123,7 @@ const gotoPage = (page) => {
 
 <template>
   <teleport to="body">
-    <LoadingPage v-if="isLoading" />
+    <LoadingPage v-if="isLoadingPage" />
   </teleport>
   <div class="page-wrapper">
     <div class="container">
